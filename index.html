@@ -41,6 +41,7 @@ style="padding:10px;font-size:24px;font-weight:bold;width:180px;">
 </div>
 
 <div class="card">
+<<<<<<< HEAD
 <h2>📊 Fixkosten</h2>
 <p style="margin-top:-8px;color:#666;font-size:14px;">laut Einkommensverteiler</p>
 
@@ -88,6 +89,25 @@ style="padding:10px;font-size:22px;width:220px;">
 <span style="font-size:22px;font-weight:bold;">€</span>
 
 <br><br>
+=======
+<h2>📊 Fixkosten</h2><p style='margin-top:-8px;color:#666;font-size:14px;'>laut Einkommensverteiler</p>
+<p>🚗 Auto <b style="float:right;">350 €</b></p>
+<p>🛡 Versicherungen <b style="float:right;">250 €</b><br>
+<span style="font-size:13px;color:#666;">Tatsächlicher Bedarf: <b>171 €</b></span></p>
+<p>🏠 Gläubigerkonto <b style="float:right;">1.705 €</b></p>
+<hr>
+<div class="total">Gesamt: 2.305 €</div>
+</div>
+
+<div class="card">
+<h2>🏦 Gläubigerkonto</h2>
+
+<label>Stand vom</label><br>
+<input type="date" style="padding:8px;margin:8px 0 18px;width:180px;"><br>
+
+<label style="display:block;margin:18px 0 12px;">Tagesaktueller Kontostand</label>
+<input type="number" value="839" style="padding:10px;font-size:22px;width:220px;"> <span style="font-size:22px;font-weight:bold;">€</span><br><br>
+>>>>>>> 19c38792ae59cc72827d986a564e3bf7e57058af
 
 <p>Zielpuffer <b>750 €</b></p>
 
@@ -96,16 +116,21 @@ style="padding:10px;font-size:22px;width:220px;">
 <b id="ueberschuss">89 €</b>
 </div>
 
+<<<<<<< HEAD
 <p id="pufferStatus" class="green">
 🟢 Du kannst 89 € entnehmen.
 </p>
 
+=======
+<p id="pufferStatus" class="green">🟢 Du kannst 89 € entnehmen.</p>
+>>>>>>> 19c38792ae59cc72827d986a564e3bf7e57058af
 </div>
 
 </div>
 
 <br><br>
 
+<<<<<<< HEAD
 <div class="grid">
 
 <div class="card">
@@ -183,15 +208,63 @@ Monatlicher Bedarf:
 
 </span>
 
+=======
+
+
+<div class="grid">
+
+>>>>>>> 19c38792ae59cc72827d986a564e3bf7e57058af
 </div>
 
 </div>
 
 </div>
 
+<<<<<<< HEAD
 </div>
 
 <script src="js/script.js"></script>
 
 </body>
 </html>
+=======
+
+<script>
+const netto=document.getElementById('netto');
+const rest=document.getElementById('rest');
+
+function calc(){
+ const fixkosten=2305;
+ const frei=(Number(netto.value)||0)-fixkosten;
+ rest.textContent=frei.toLocaleString('de-DE',{maximumFractionDigits:0})+" €";
+}
+if(netto){
+ netto.addEventListener('input',calc);
+ calc();
+}
+</script>
+
+<script>
+const konto=document.querySelectorAll('input[type="number"]')[1];
+const u=document.getElementById('ueberschuss');
+const s=document.getElementById('pufferStatus');
+function updatePuffer(){
+ const ziel=750;
+ const stand=Number(konto.value)||0;
+ const diff=Math.round(stand-ziel);
+ if(diff>=0){
+   u.textContent=diff+" €";
+   s.style.color="#16a34a";
+   s.textContent="🟢 Du kannst "+diff+" € entnehmen.";
+ }else{
+   u.textContent="-"+Math.abs(diff)+" €";
+   s.style.color="#dc2626";
+   s.textContent="🔴 Es fehlen "+Math.abs(diff)+" € bis zum Zielpuffer.";
+ }
+}
+konto.addEventListener('input',updatePuffer);
+updatePuffer();
+</script>
+</body>
+</html>
+>>>>>>> 19c38792ae59cc72827d986a564e3bf7e57058af
