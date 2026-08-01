@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Finanzplaner Familie Kremer</title>
+<style>
+body{
+    margin:0;
+    background:#f4f6f9;
+    font-family:Arial,sans-serif;
+    color:#222;
+}
+header{
+    background:#111827;
+    color:#fff;
+    padding:25px 40px;
+}
+.container{
+    max-width:980px;
+    margin:24px auto;
+    padding:0 30px;
+}
+.grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(300px,1fr));
+    gap:18px;
+}
+.card{
+    background:#fff;
+    border-radius:18px;
+    padding:18px;
+    box-shadow:0 10px 25px rgba(0,0,0,.08);
+}
+.card h2{
+    margin-top:0;
+}
+.big{
+    font-size:32px;
+    font-weight:bold;
+}
+table{
+    width:100%;
+    border-collapse:collapse;
+}
+th,td{
+    padding:10px;
+    border-bottom:1px solid #ececec;
+    text-align:left;
+}
+.total{
+    font-size:22px;
+    font-weight:bold;
+    margin-top:20px;
+}
+.green{
+    color:#16a34a;
+    font-weight:bold;
+}
+button{
+    margin-top:18px;
+    background:#111827;
+    color:#fff;
+    border:none;
+    padding:12px 18px;
+    border-radius:10px;
+    cursor:pointer;
+}
+</style>
+</head>
+
+<body>
+
+<header>
+<h1>🏦 Finanzplaner Familie Kremer</h1>
+<p>Ein Blick. Alles im Griff.</p>
+</header>
+
+<div class="container">
+
+<div class="grid">
+
+<div class="card">
+
+<h2>💶 Einkommen</h2>
+
+<label style="display:block;font-size:14px;color:#666;margin-bottom:6px;">Monatsnetto</label>
+<div style="display:flex;align-items:center;gap:8px;margin-bottom:18px;">
+<input id="netto" type="number" value="3500"
+style="padding:10px;font-size:24px;font-weight:bold;width:180px;">
+<span style="font-size:24px;font-weight:bold;">€</span>
+</div>
+
+<p>💰 Verfügbar</p>
+<div class="big" id="rest">1.195 €</div>
+
+</div>
+
+<div class="card">
+<h2>📊 Fixkosten</h2><p style='margin-top:-8px;color:#666;font-size:14px;'>laut Einkommensverteiler</p>
+<p>🚗 Auto <b style="float:right;">350 €</b></p>
+<p>🛡 Versicherungen <b style="float:right;">250 €</b><br>
+<span style="font-size:13px;color:#666;">Tatsächlicher Bedarf: <b>171 €</b></span></p>
+<p>🏠 Gläubigerkonto <b style="float:right;">1.705 €</b></p>
+<hr>
+<div class="total">Gesamt: 2.305 €</div>
+</div>
+
+<div class="card">
+<h2>🏦 Gläubigerkonto</h2>
+
+<label>Stand vom</label><br>
+<input type="date" style="padding:8px;margin:8px 0 18px;width:180px;"><br>
+
+<label style="display:block;margin:18px 0 12px;">Tagesaktueller Kontostand</label>
+<input type="number" value="839" style="padding:10px;font-size:22px;width:220px;"> <span style="font-size:22px;font-weight:bold;">€</span><br><br>
+
+<p>Zielpuffer <b>750 €</b></p>
+
+<div style="display:flex;justify-content:space-between;margin:14px 0;">
+<span>Überschuss</span>
+<b id="ueberschuss">89 €</b>
+</div>
+
+<p id="pufferStatus" class="green">🟢 Du kannst 89 € entnehmen.</p>
+</div>
+
+</div>
+
+<br><br>
+
+
+
+<div class="grid">
+
+</div>
+
+</div>
+
+</div>
+
+
+<script>
+const netto=document.getElementById('netto');
+const rest=document.getElementById('rest');
+
+function calc(){
+ const fixkosten=2305;
+ const frei=(Number(netto.value)||0)-fixkosten;
+ rest.textContent=frei.toLocaleString('de-DE',{maximumFractionDigits:0})+" €";
+}
+if(netto){
+ netto.addEventListener('input',calc);
+ calc();
+}
+</script>
+
+<script>
+const konto=document.querySelectorAll('input[type="number"]')[1];
+const u=document.getElementById('ueberschuss');
+const s=document.getElementById('pufferStatus');
+function updatePuffer(){
+ const ziel=750;
+ const stand=Number(konto.value)||0;
+ const diff=Math.round(stand-ziel);
+ if(diff>=0){
+   u.textContent=diff+" €";
+   s.style.color="#16a34a";
+   s.textContent="🟢 Du kannst "+diff+" € entnehmen.";
+ }else{
+   u.textContent="-"+Math.abs(diff)+" €";
+   s.style.color="#dc2626";
+   s.textContent="🔴 Es fehlen "+Math.abs(diff)+" € bis zum Zielpuffer.";
+ }
+}
+konto.addEventListener('input',updatePuffer);
+updatePuffer();
+</script>
+</body>
+</html>
