@@ -41,8 +41,7 @@ function initDaten() {
     speichereInLocalStorage();
   }
 
-  // Korrektur: Falls alte Daten im LocalStorage noch keine Kategorie haben,
-  // werden sie mit den Standard-Daten aus daten.js abgeglichen.
+  // Korrektur: Falls Daten im LocalStorage noch keine Kategorie besitzen
   if (typeof vertraege !== "undefined") {
     vertragsDaten.forEach(v => {
       if (!v.kategorie) {
