@@ -81,7 +81,7 @@ style="padding:8px;margin:8px 0 18px;width:180px;">
 Tagesaktueller Kontostand
 </label>
 
-<input type="number"
+<input id="kontostand" type="number"
 value="839"
 style="padding:10px;font-size:22px;width:220px;">
 
@@ -226,5 +226,47 @@ Monatlicher Bedarf:
 
 <script src="js/daten.js?v=1.1"></script>
 <script src="js/script.js?v=1.1"></script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  const nettoInput = document.getElementById('netto');
+  const kontostandInput = document.getElementById('kontostand');
+  const restDisplay = document.getElementById('rest');
+  const ueberschussDisplay = document.getElementById('ueberschuss');
+  const pufferStatusDisplay = document.getElementById('pufferStatus');
+
+  const fixkostenGesamt = 2305;
+  const zielpuffer = 750;
+
+  function berechneFinanzen() {
+    // 1. Berechnung Einkommen / Verfügbar
+    const netto = parseFloat(nettoInput.value) || 0;
+    const verfuegbar = netto - fixkostenGesamt;
+    restDisplay.textContent = verfuegbar.toLocaleString('de-DE') + ' €';
+
+    // 2. Berechnung Gläubigerkonto / Überschuss
+    const kontostand = parseFloat(kontostandInput.value) || 0;
+    const ueberschuss = kontostand - zielpuffer;
+
+    if (ueberschuss >= 0) {
+      ueberschussDisplay.textContent = ueberschuss.toLocaleString('de-DE') + ' €';
+      pufferStatusDisplay.className = 'green';
+      pufferStatusDisplay.textContent = '🟢 Du kannst ' + ueberschuss.toLocaleString('de-DE') + ' € entnehmen.';
+    } else {
+      const fehlbetrag = Math.abs(ueberschuss);
+      ueberschussDisplay.textContent = '-' + fehlbetrag.toLocaleString('de-DE') + ' €';
+      pufferStatusDisplay.className = 'red';
+      pufferStatusDisplay.textContent = '🔴 Es fehlen ' + fehlbetrag.toLocaleString('de-DE') + ' € zum Zielpuffer.';
+    }
+  }
+
+  // Event Listener für Echtzeit-Berechnung bei Eingabe
+  if (nettoInput) nettoInput.addEventListener('input', berechneFinanzen);
+  if (kontostandInput) kontostandInput.addEventListener('input', berechneFinanzen);
+
+  // Erstberechnung ausführen
+  berechneFinanzen();
+});
+</script>
 </body>
 </html>
