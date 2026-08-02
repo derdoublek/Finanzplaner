@@ -40,6 +40,22 @@ function initDaten() {
     vertragsDaten = typeof vertraege !== "undefined" ? [...vertraege] : [];
     speichereInLocalStorage();
   }
+
+  // Korrektur: Falls alte Daten im LocalStorage noch keine Kategorie haben,
+  // werden sie mit den Standard-Daten aus daten.js abgeglichen.
+  if (typeof vertraege !== "undefined") {
+    vertragsDaten.forEach(v => {
+      if (!v.kategorie) {
+        const original = vertraege.find(o => o.name === v.name);
+        if (original && original.kategorie) {
+          v.kategorie = original.kategorie;
+        } else {
+          v.kategorie = "Gläubigerkonto";
+        }
+      }
+    });
+    speichereInLocalStorage();
+  }
 }
 
 function speichereInLocalStorage() {
@@ -87,7 +103,7 @@ function befuelleKategorieFilter() {
   if (!filterSelect) return;
 
   const aktuelleAuswahl = filterSelect.value;
-  const kategorien = [...new Set(vertragsDaten.map(v => v.kategorie || "Allgemein"))].sort();
+  const kategorien = [...new Set(vertragsDaten.map(v => v.kategorie || "Gläubigerkonto"))].sort();
 
   filterSelect.innerHTML = '<option value="">Alle Kategorien</option>';
   kategorien.forEach(kat => {
@@ -113,12 +129,12 @@ function renderVertragstabelle() {
   targetElement.innerHTML = "";
 
   vertragsDaten.forEach((v, index) => {
-    const kat = v.kategorie || "Allgemein";
+    const kat = v.kategorie || "Gläubigerkonto";
     const nameMatch = v.name && v.name.toLowerCase().includes(suchBegriff);
     const katMatch = kat.toLowerCase().includes(suchBegriff);
 
     const suchePassend = suchBegriff === "" || nameMatch || katMatch;
-    const kategoriePassend = gewaehlteKategorie === "" || kat === gewaehlteKategorie;
+    const kategoriePassend = gewaehlteKategorie === "" || kat.toLowerCase() === gewaehlteKategorie.toLowerCase();
 
     if (suchePassend && kategoriePassend) {
       const row = document.createElement("tr");
@@ -138,7 +154,6 @@ function renderVertragstabelle() {
     }
   });
 
-  // Aktualisiert nach dem Rendern der Tabelle direkt den Summenbedarf
   berechneVertragssumme();
 }
 
@@ -216,7 +231,7 @@ window.loescheVertrag = function(index) {
   }
 };
 
-// --- DYNAMISCHE SUMMENBERECHUNG NORMALTER / GEFILTERTER BEREICH ---
+// --- DYNAMISCHE SUMMENBERECHUNG ---
 function berechneVertragssumme() {
   const sucheInput = document.getElementById("sucheVertrag");
   const suchBegriff = sucheInput ? sucheInput.value.toLowerCase().trim() : "";
@@ -224,14 +239,13 @@ function berechneVertragssumme() {
   const filterSelect = document.getElementById("filterKategorie");
   const gewaehlteKategorie = filterSelect ? filterSelect.value : "";
 
-  // Nur Verträge berücksichtigen, die zur aktuellen Suche/Filterung passen
   const gefilterteVertraege = vertragsDaten.filter(v => {
-    const kat = v.kategorie || "Allgemein";
+    const kat = v.kategorie || "Gläubigerkonto";
     const nameMatch = v.name && v.name.toLowerCase().includes(suchBegriff);
     const katMatch = kat.toLowerCase().includes(suchBegriff);
 
     const suchePassend = suchBegriff === "" || nameMatch || katMatch;
-    const kategoriePassend = gewaehlteKategorie === "" || kat === gewaehlteKategorie;
+    const kategoriePassend = gewaehlteKategorie === "" || kat.toLowerCase() === gewaehlteKategorie.toLowerCase();
 
     return suchePassend && kategoriePassend;
   });
