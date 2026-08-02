@@ -1,293 +1,176 @@
-// ==========================================
-// Family Finance OS - Hauptsteuerung
-// ==========================================
+// Hauptfunktion zur Darstellung der Vertragsverwaltung
+function renderVertragsverwaltungView() {
+  const root = document.getElementById('view-root');
+  if (!root) return;
 
-let vertragsDaten = [];
-let editIndex = null;
+  root.innerHTML = `
+    <div style="max-width:900px; margin:0 auto; display:flex; flex-direction:column; gap:20px;">
+      
+      <!-- Top Bar / Action Buttons -->
+      <div class="card" style="padding:16px; display:flex; gap:12px; align-items:center; justify-content:space-between; flex-wrap:wrap;">
+        <div style="display:flex; gap:10px; align-items:center;">
+          <button class="btn btn-secondary" onclick="exportContractsJSON()">JSON Export</button>
+          <label class="btn btn-secondary" style="margin:0; cursor:pointer;">
+            JSON Import
+            <input type="file" accept=".json" onchange="importContractsJSON(event)" style="display:none;" />
+          </label>
+        </div>
+        <div style="display:flex; gap:10px; align-items:center;">
+          <button class="btn btn-primary" onclick="openContractModal()">+ Neuer Vertrag</button>
+        </div>
+      </div>
 
-// --- HILFSFUNKTIONEN ---
-function escapeHtml(text) {
-  if (!text) return "";
-  const div = document.createElement("div");
-  div.textContent = text;
-  return div.innerHTML;
-}
+      <!-- KPI Overview Cards -->
+      <div id="vertrag-kpi-container"></div>
 
-function formatWaehrung(betrag) {
-  return new Intl.NumberFormat("de-DE", {
-    style: "currency",
-    currency: "EUR"
-  }).format(betrag);
-}
+      <!-- Main Accordion Section -->
+      <div class="card" style="padding:16px;">
+        <!-- WICHTIG: Kein "open" Attribut im details-Tag -> bleibt standardmäßig zugeklappt -->
+        <details id="details-vertragsverwaltung" style="border:1px solid var(--border); border-radius:8px; padding:12px;">
+          <summary style="font-weight:600; cursor:pointer; font-size:1.1rem; user-select:none;">
+            Allgemeine Vertragsverwaltung
+          </summary>
+          
+          <div style="margin-top:16px; display:flex; flex-direction:column; gap:16px;">
+            <!-- Filter Bar -->
+            <div style="display:flex; gap:12px; flex-wrap:wrap; align-items:center;">
+              <input 
+                type="text" 
+                id="contract-search-input" 
+                placeholder="Vertrag oder Anbieter suchen..." 
+                class="form-control" 
+                style="flex:1; min-width:200px;"
+                oninput="renderVertragsListe()"
+              />
+              <select id="contract-category-filter" class="form-control" style="width:auto;" onchange="renderVertragsListe()">
+                <option value="ALL">Alle Kategorien</option>
+                <option value="VERSICHERUNG">Versicherungen</option>
+                <option value="ABONNEMENT">Abonnements</option>
+                <option value="MIETE_NEBENKOSTEN">Miete & Nebenkosten</option>
+                <option value="SONSTIGES">Sonstiges</option>
+              </select>
+              <select id="contract-status-filter" class="form-control" style="width:auto;" onchange="renderVertragsListe()">
+                <option value="ALL">Alle Status</option>
+                <option value="AKTIV">Aktiv</option>
+                <option value="GEKUENDIGT">Gekündigt</option>
+                <option value="PAUSIERT">Pausiert</option>
+              </select>
+            </div>
 
-// --- INITIALISIERUNG ---
-document.addEventListener("DOMContentLoaded", () => {
-  initDaten();
-  setupEventListeners();
-  renderAll();
-});
+            <!-- Table Container -->
+            <div id="vertrags-liste-container" style="overflow-x:auto;"></div>
+          </div>
+        </details>
+      </div>
 
-function initDaten() {
-  const gespeicherteVertraege = localStorage.getItem("ffos_vertraege");
+    </div>
+  `;
 
-  if (gespeicherteVertraege) {
-    try {
-      const parsed = JSON.parse(gespeicherteVertraege);
-      if (Array.isArray(parsed) && parsed.length > 0) {
-        vertragsDaten = parsed;
-      } else {
-        vertragsDaten = typeof vertraege !== "undefined" ? [...vertraege] : [];
-      }
-    } catch (e) {
-      vertragsDaten = typeof vertraege !== "undefined" ? [...vertraege] : [];
-    }
-  } else {
-    vertragsDaten = typeof vertraege !== "undefined" ? [...vertraege] : [];
-    speichereInLocalStorage();
+  // Explizit sicherstellen, dass das 'open'-Attribut nach dem Rendern entfernt ist
+  const detailsEl = document.getElementById('details-vertragsverwaltung');
+  if (detailsEl) {
+    detailsEl.removeAttribute('open');
   }
+
+  renderVertragKPIs();
+  renderVertragsListe();
 }
 
-function speichereInLocalStorage() {
-  localStorage.setItem("ffos_vertraege", JSON.stringify(vertragsDaten));
+// Hilfsfunktion: Rendert die KPI-Karten
+function renderVertragKPIs() {
+  const container = document.getElementById('vertrag-kpi-container');
+  if (!container) return;
+
+  const contracts = typeof state !== 'undefined' && state.contracts ? state.contracts : [];
+  
+  const totalContracts = contracts.length;
+  const activeContracts = contracts.filter(c => c.status === 'AKTIV').length;
+  const monthlyCosts = contracts
+    .filter(c => c.status === 'AKTIV')
+    .reduce((sum, c) => sum + (Number(c.monthlyCost) || 0), 0);
+
+  container.innerHTML = `
+    <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap:12px;">
+      <div class="card" style="padding:12px; text-align:center;">
+        <div style="font-size:0.85rem; color:var(--text-muted);">Verträge Gesamt</div>
+        <div style="font-size:1.4rem; font-weight:bold;">${totalContracts}</div>
+      </div>
+      <div class="card" style="padding:12px; text-align:center;">
+        <div style="font-size:0.85rem; color:var(--text-muted);">Aktive Verträge</div>
+        <div style="font-size:1.4rem; font-weight:bold; color:var(--success, #28a745);">${activeContracts}</div>
+      </div>
+      <div class="card" style="padding:12px; text-align:center;">
+        <div style="font-size:0.85rem; color:var(--text-muted);">Monatliche Kosten (Aktiv)</div>
+        <div style="font-size:1.4rem; font-weight:bold;">${monthlyCosts.toFixed(2)} €</div>
+      </div>
+    </div>
+  `;
 }
 
-// --- EVENT LISTENER ---
-function setupEventListeners() {
-  const sucheInput = document.getElementById("sucheVertrag");
-  if (sucheInput) {
-    sucheInput.addEventListener("input", renderVertragstabelle);
-  }
+// Hilfsfunktion: Gefilterte Vertragsliste rendern
+function renderVertragsListe() {
+  const container = document.getElementById('vertrags-liste-container');
+  if (!container) return;
 
-  const filterKategorie = document.getElementById("filterKategorie");
-  if (filterKategorie) {
-    filterKategorie.addEventListener("change", renderVertragstabelle);
-  }
+  const searchInput = document.getElementById('contract-search-input');
+  const categoryFilter = document.getElementById('contract-category-filter');
+  const statusFilter = document.getElementById('contract-status-filter');
 
-  const speicherBtn = document.getElementById("vertragSpeichern");
-  if (speicherBtn) {
-    speicherBtn.addEventListener("click", speichereVertragHandler);
-  }
+  const searchValue = searchInput ? searchInput.value.toLowerCase() : '';
+  const categoryValue = categoryFilter ? categoryFilter.value : 'ALL';
+  const statusValue = statusFilter ? statusFilter.value : 'ALL';
 
-  const nettoInput = document.getElementById("netto");
-  if (nettoInput) {
-    nettoInput.addEventListener("input", berechneFinanzen);
-  }
+  const contracts = typeof state !== 'undefined' && state.contracts ? state.contracts : [];
 
-  const kontoInput = document.querySelectorAll("input[type='number']")[1];
-  if (kontoInput) {
-    kontoInput.addEventListener("input", updatePuffer);
-  }
-}
-
-// --- RENDERING ---
-function renderAll() {
-  befuelleKategorieFilter();
-  renderVertragstabelle();
-  berechneFinanzen();
-  updatePuffer();
-}
-
-function befuelleKategorieFilter() {
-  const filterSelect = document.getElementById("filterKategorie");
-  if (!filterSelect) return;
-
-  const aktuelleAuswahl = filterSelect.value;
-  const kategorien = [...new Set(vertragsDaten.map(v => v.kategorie || "Sonstiges"))].sort();
-
-  filterSelect.innerHTML = '<option value="">Alle Kategorien</option>';
-  kategorien.forEach(kat => {
-    const option = document.createElement("option");
-    option.value = kat;
-    option.textContent = kat;
-    if (kat === aktuelleAuswahl) option.selected = true;
-    filterSelect.appendChild(option);
-  });
-}
-
-function renderVertragstabelle() {
-  const tabelle = document.getElementById("vertragstabelle");
-  if (!tabelle) return;
-
-  const targetElement = tabelle.querySelector("tbody") || tabelle;
-  const sucheInput = document.getElementById("sucheVertrag");
-  const suchBegriff = sucheInput ? sucheInput.value.toLowerCase().trim() : "";
-  const filterSelect = document.getElementById("filterKategorie");
-  const gewaehlteKategorie = filterSelect ? filterSelect.value : "";
-
-  targetElement.innerHTML = "";
-
-  // Nur gefilterte Verträge ermitteln
-  const gefilterteVertraege = vertragsDaten.filter(v => {
-    const kat = v.kategorie || "Sonstiges";
-    const nameMatch = v.name && v.name.toLowerCase().includes(suchBegriff);
-    const katMatch = kat.toLowerCase().includes(suchBegriff);
-
-    const suchePassend = suchBegriff === "" || nameMatch || katMatch;
-    const kategoriePassend = gewaehlteKategorie === "" || kat === gewaehlteKategorie;
-
-    return suchePassend && kategoriePassend;
-  });
-
-  // Gefilterte Verträge in der Tabelle anzeigen
-  gefilterteVertraege.forEach((v) => {
-    const originalIndex = vertragsDaten.indexOf(v);
-    const kat = v.kategorie || "Sonstiges";
-
-    const row = document.createElement("tr");
-    row.innerHTML = `
-      <td>${escapeHtml(kat)}</td>
-      <td><strong>${escapeHtml(v.name || "-")}</strong></td>
-      <td>${formatWaehrung(v.jaehrlich || 0)}</td>
-      <td>${formatWaehrung(v.monatlich || 0)}</td>
-      <td style="text-align:center;">
-        <button class="btn-icon" onclick="bearbeiteVertrag(${originalIndex})">✏️</button>
-        <button class="btn-icon" onclick="loescheVertrag(${originalIndex})">🗑️</button>
-      </td>
-    `;
-    targetElement.appendChild(row);
+  const filtered = contracts.filter(c => {
+    const matchesSearch = !searchValue || 
+      (c.name && c.name.toLowerCase().includes(searchValue)) ||
+      (c.provider && c.provider.toLowerCase().includes(searchValue));
+    const matchesCategory = categoryValue === 'ALL' || c.category === categoryValue;
+    const matchesStatus = statusValue === 'ALL' || c.status === statusValue;
+    return matchesSearch && matchesCategory && matchesStatus;
   });
 
-  // Summe NUR für gefilterte Verträge berechnen
-  berechneVertragssumme(gefilterteVertraege);
-}
-
-// --- CRUD FUNKTIONEN ---
-function speichereVertragHandler(e) {
-  if (e) e.preventDefault();
-
-  const nameInput = document.getElementById("vertragName");
-  const betragInput = document.getElementById("vertragBetrag");
-  const rhythmusSelect = document.getElementById("vertragRhythmus");
-  const kategorieSelect = document.getElementById("vertragKategorie");
-
-  if (!nameInput || !betragInput) return;
-
-  const name = nameInput.value.trim();
-  const rawBetrag = parseFloat(betragInput.value.replace(",", "."));
-  const rhythmus = rhythmusSelect ? rhythmusSelect.value : "1";
-  const kategorie = kategorieSelect ? kategorieSelect.value : "Sonstiges";
-
-  if (!name || isNaN(rawBetrag) || rawBetrag <= 0) {
-    alert("Bitte gib einen gültigen Namen und Betrag ein.");
+  if (filtered.length === 0) {
+    container.innerHTML = `<div style="padding:20px; text-align:center; color:var(--text-muted);">Keine Verträge gefunden.</div>`;
     return;
   }
 
-  let monatlich = 0;
-  let jaehrlich = 0;
+  let html = `
+    <table class="table" style="width:100%; border-collapse:collapse;">
+      <thead>
+        <tr style="border-bottom:1px solid var(--border); text-align:left;">
+          <th style="padding:8px;">Name / Anbieter</th>
+          <th style="padding:8px;">Kategorie</th>
+          <th style="padding:8px;">Kosten (mtl.)</th>
+          <th style="padding:8px;">Status</th>
+          <th style="padding:8px; text-align:right;">Aktionen</th>
+        </tr>
+      </thead>
+      <tbody>
+  `;
 
-  const monateProJahr = parseInt(rhythmus, 10) || 1;
-  if (monateProJahr === 12) {
-    jaehrlich = rawBetrag;
-    monatlich = rawBetrag / 12;
-  } else if (monateProJahr === 6) {
-    jaehrlich = rawBetrag * 2;
-    monatlich = jaehrlich / 12;
-  } else if (monateProJahr === 3) {
-    jaehrlich = rawBetrag * 4;
-    monatlich = jaehrlich / 12;
-  } else {
-    monatlich = rawBetrag;
-    jaehrlich = rawBetrag * 12;
-  }
+  filtered.forEach(c => {
+    html += `
+      <tr style="border-bottom:1px solid var(--border);">
+        <td style="padding:8px;">
+          <div style="font-weight:600;">${c.name || 'Unbenannt'}</div>
+          <div style="font-size:0.8rem; color:var(--text-muted);">${c.provider || ''}</div>
+        </td>
+        <td style="padding:8px;">${c.category || '-'}</td>
+        <td style="padding:8px;">${(Number(c.monthlyCost) || 0).toFixed(2)} €</td>
+        <td style="padding:8px;"><span class="badge">${c.status || 'AKTIV'}</span></td>
+        <td style="padding:8px; text-align:right;">
+          <button class="btn btn-sm btn-secondary" onclick="editContract('${c.id}')">Bearbeiten</button>
+        </td>
+      </tr>
+    `;
+  });
 
-  const neuerVertrag = {
-    kategorie,
-    name,
-    jaehrlich,
-    monatlich
-  };
+  html += `
+      </tbody>
+    </table>
+  `;
 
-  if (editIndex !== null) {
-    vertragsDaten[editIndex] = neuerVertrag;
-    editIndex = null;
-    document.getElementById("vertragSpeichern").textContent = "➕ Vertrag hinzufügen";
-  } else {
-    vertragsDaten.push(neuerVertrag);
-  }
-
-  speichereInLocalStorage();
-  renderAll();
-
-  nameInput.value = "";
-  betragInput.value = "";
-}
-
-window.bearbeiteVertrag = function(index) {
-  const v = vertragsDaten[index];
-  if (!v) return;
-
-  document.getElementById("vertragName").value = v.name || "";
-  document.getElementById("vertragBetrag").value = v.monatlich || "";
-  if (document.getElementById("vertragKategorie")) {
-    document.getElementById("vertragKategorie").value = v.kategorie || "Sonstiges";
-  }
-
-  editIndex = index;
-  document.getElementById("vertragSpeichern").textContent = "✏️ Änderung speichern";
-};
-
-window.loescheVertrag = function(index) {
-  if (confirm(`Möchtest du "${vertragsDaten[index].name}" wirklich löschen?`)) {
-    vertragsDaten.splice(index, 1);
-    
-    if (editIndex === index) {
-      editIndex = null;
-      document.getElementById("vertragSpeichern").textContent = "➕ Vertrag hinzufügen";
-    }
-    
-    speichereInLocalStorage();
-    renderAll();
-  }
-};
-
-// --- BERECHNUNGEN ---
-function berechneVertragssumme(liste = vertragsDaten) {
-  const gesamtMonatlich = liste.reduce(
-    (summe, v) => summe + (v.monatlich || 0),
-    0
-  );
-
-  const gesamtAnzeige = document.getElementById("gesamtVertraege");
-  if (gesamtAnzeige) {
-    gesamtAnzeige.textContent = formatWaehrung(gesamtMonatlich);
-  }
-
-  return gesamtMonatlich;
-}
-
-function berechneFinanzen() {
-  const nettoInput = document.getElementById("netto");
-  const restAnzeige = document.getElementById("rest");
-
-  if (!nettoInput || !restAnzeige) return;
-
-  const netto = parseFloat(nettoInput.value.replace(",", ".")) || 0;
-  const vertragsSumme = vertragsDaten.reduce((summe, v) => summe + (v.monatlich || 0), 0);
-  const fixkosten = Math.max(2305, vertragsSumme);
-
-  const verfuegbar = netto - fixkosten;
-  restAnzeige.textContent = formatWaehrung(verfuegbar);
-}
-
-function updatePuffer() {
-  const konto = document.querySelectorAll("input[type='number']")[1];
-  const u = document.getElementById("ueberschuss");
-  const s = document.getElementById("pufferStatus");
-
-  if (!konto || !u || !s) return;
-
-  const ziel = 750;
-  const stand = Number(konto.value) || 0;
-  const diff = Math.round(stand - ziel);
-
-  if (diff >= 0) {
-    u.textContent = formatWaehrung(diff);
-    s.className = "green";
-    s.textContent = "🟢 Du kannst " + formatWaehrung(diff) + " entnehmen.";
-  } else {
-    u.textContent = "-" + formatWaehrung(Math.abs(diff));
-    s.className = "";
-    s.style.color = "#dc2626";
-    s.textContent = "🔴 Es fehlen " + formatWaehrung(Math.abs(diff)) + " bis zum Zielpuffer.";
-  }
+  container.innerHTML = html;
 }

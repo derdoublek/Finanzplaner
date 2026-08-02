@@ -163,54 +163,56 @@ Monatlicher Bedarf:
 
 <hr>
 
-<h3>➕ Neuer Vertrag</h3>
+<details>
+  <summary style="cursor: pointer; font-size: 18px; font-weight: bold; user-select: none; margin: 10px 0;">
+    ➕ Neuer Vertrag hinzufügen
+  </summary>
 
-<input
-id="vertragName"
-type="text"
-placeholder="Vertragsname"
-style="width:100%;padding:10px;">
+  <div style="margin-top: 15px;">
+    <input
+      id="vertragName"
+      type="text"
+      placeholder="Vertragsname"
+      style="width:100%;padding:10px;"
+    >
 
-<br><br>
+    <br><br>
 
-<input
-id="vertragBetrag"
-type="number"
-placeholder="Betrag"
-style="width:220px;padding:10px;">
+    <input
+      id="vertragBetrag"
+      type="number"
+      placeholder="Betrag"
+      style="width:220px;padding:10px;"
+    >
 
-<span style="font-size:20px;font-weight:bold;">€</span>
+    <span style="font-size:20px;font-weight:bold;">€</span>
 
-<br><br>
+    <br><br>
 
-<select
-id="vertragRhythmus"
-style="padding:10px;">
+    <select id="vertragRhythmus" style="padding:10px;">
+      <option value="1">Monatlich</option>
+      <option value="3">Vierteljährlich</option>
+      <option value="6">Halbjährlich</option>
+      <option value="12">Jährlich</option>
+    </select>
 
-<option value="1">Monatlich</option>
-<option value="3">Vierteljährlich</option>
-<option value="6">Halbjährlich</option>
-<option value="12">Jährlich</option>
+    <br><br>
 
-</select>
+    <select id="vertragKategorie" style="padding:10px;">
+      <option value="Auto">Auto</option>
+      <option value="Wohnen">Wohnen</option>
+      <option value="Versicherung">Versicherung</option>
+      <option value="Abonnement">Abonnement</option>
+      <option value="Sonstiges">Sonstiges</option>
+    </select>
 
-<br><br>
+    <br><br>
 
-<select id="vertragKategorie" style="padding:10px;">
-  <option value="Auto">Auto</option>
-  <option value="Wohnen">Wohnen</option>
-  <option value="Versicherung">Versicherung</option>
-  <option value="Abonnement">Abonnement</option>
-  <option value="Sonstiges">Sonstiges</option>
-</select>
-
-<br><br>
-
-<button id="vertragSpeichern">
-
-➕ Vertrag hinzufügen
-
-</button>
+    <button id="vertragSpeichern">
+      ➕ Vertrag hinzufügen
+    </button>
+  </div>
+</details>
 
 </div>
 
