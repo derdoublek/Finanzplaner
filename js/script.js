@@ -33,7 +33,6 @@ function initDaten() {
   if (gespeicherteVertraege) {
     try {
       const parsed = JSON.parse(gespeicherteVertraege);
-      // Wenn localStorage existiert, aber leer ist, geladene Daten aus daten.js nutzen
       if (Array.isArray(parsed) && parsed.length > 0) {
         vertragsDaten = parsed;
       } else {
@@ -117,7 +116,8 @@ function renderVertragstabelle() {
 
   targetElement.innerHTML = "";
 
-  vertragsDaten.forEach((v, index) => {
+  // Nur gefilterte Verträge ermitteln
+  const gefilterteVertraege = vertragsDaten.filter(v => {
     const kat = v.kategorie || "Sonstiges";
     const nameMatch = v.name && v.name.toLowerCase().includes(suchBegriff);
     const katMatch = kat.toLowerCase().includes(suchBegriff);
@@ -125,25 +125,30 @@ function renderVertragstabelle() {
     const suchePassend = suchBegriff === "" || nameMatch || katMatch;
     const kategoriePassend = gewaehlteKategorie === "" || kat === gewaehlteKategorie;
 
-    if (suchePassend && kategoriePassend) {
-      const row = document.createElement("tr");
-
-      row.innerHTML = `
-        <td>${escapeHtml(kat)}</td>
-        <td><strong>${escapeHtml(v.name || "-")}</strong></td>
-        <td>${formatWaehrung(v.jaehrlich || 0)}</td>
-        <td>${formatWaehrung(v.monatlich || 0)}</td>
-        <td style="text-align:center;">
-          <button class="btn-icon" onclick="bearbeiteVertrag(${index})">✏️</button>
-          <button class="btn-icon" onclick="loescheVertrag(${index})">🗑️</button>
-        </td>
-      `;
-
-      targetElement.appendChild(row);
-    }
+    return suchePassend && kategoriePassend;
   });
 
-  berechneVertragssumme();
+  // Gefilterte Verträge in der Tabelle anzeigen
+  gefilterteVertraege.forEach((v) => {
+    const originalIndex = vertragsDaten.indexOf(v);
+    const kat = v.kategorie || "Sonstiges";
+
+    const row = document.createElement("tr");
+    row.innerHTML = `
+      <td>${escapeHtml(kat)}</td>
+      <td><strong>${escapeHtml(v.name || "-")}</strong></td>
+      <td>${formatWaehrung(v.jaehrlich || 0)}</td>
+      <td>${formatWaehrung(v.monatlich || 0)}</td>
+      <td style="text-align:center;">
+        <button class="btn-icon" onclick="bearbeiteVertrag(${originalIndex})">✏️</button>
+        <button class="btn-icon" onclick="loescheVertrag(${originalIndex})">🗑️</button>
+      </td>
+    `;
+    targetElement.appendChild(row);
+  });
+
+  // Summe NUR für gefilterte Verträge berechnen
+  berechneVertragssumme(gefilterteVertraege);
 }
 
 // --- CRUD FUNKTIONEN ---
@@ -236,8 +241,8 @@ window.loescheVertrag = function(index) {
 };
 
 // --- BERECHNUNGEN ---
-function berechneVertragssumme() {
-  const gesamtMonatlich = vertragsDaten.reduce(
+function berechneVertragssumme(liste = vertragsDaten) {
+  const gesamtMonatlich = liste.reduce(
     (summe, v) => summe + (v.monatlich || 0),
     0
   );
@@ -257,7 +262,7 @@ function berechneFinanzen() {
   if (!nettoInput || !restAnzeige) return;
 
   const netto = parseFloat(nettoInput.value.replace(",", ".")) || 0;
-  const vertragsSumme = berechneVertragssumme();
+  const vertragsSumme = vertragsDaten.reduce((summe, v) => summe + (v.monatlich || 0), 0);
   const fixkosten = Math.max(2305, vertragsSumme);
 
   const verfuegbar = netto - fixkosten;
