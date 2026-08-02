@@ -82,16 +82,11 @@ function renderAll() {
   updatePuffer();
 }
 
-/**
- * Befüllt das Kategorie-Dropdown dynamisch mit allen vorhandenen Kategorien aus daten.js
- */
 function befuelleKategorieFilter() {
   const filterSelect = document.getElementById("filterKategorie");
   if (!filterSelect) return;
 
   const aktuelleAuswahl = filterSelect.value;
-
-  // Eindeutige Kategorien ermitteln
   const kategorien = [...new Set(vertragsDaten.map(v => v.kategorie || "Allgemein"))].sort();
 
   filterSelect.innerHTML = '<option value="">Alle Kategorien</option>';
@@ -109,7 +104,6 @@ function renderVertragstabelle() {
   if (!tabelle) return;
 
   const targetElement = tabelle.querySelector("tbody") || tabelle;
-
   const sucheInput = document.getElementById("sucheVertrag");
   const suchBegriff = sucheInput ? sucheInput.value.toLowerCase().trim() : "";
 
@@ -144,6 +138,7 @@ function renderVertragstabelle() {
     }
   });
 
+  // Aktualisiert nach dem Rendern der Tabelle direkt den Summenbedarf
   berechneVertragssumme();
 }
 
@@ -159,7 +154,7 @@ function speichereVertragHandler(e) {
 
   const name = nameInput.value.trim();
   const rawBetrag = parseFloat(betragInput.value.replace(",", "."));
-  const rhythmus = rhythmusSelect ? rhythmusSelect.value : "monatlich";
+  const rhythmus = rhythmusSelect ? rhythmusSelect.value : "1";
 
   if (!name || isNaN(rawBetrag) || rawBetrag <= 0) {
     alert("Bitte gib einen gültigen Namen und Betrag ein.");
@@ -169,7 +164,7 @@ function speichereVertragHandler(e) {
   let monatlich = 0;
   let jaehrlich = 0;
 
-  if (rhythmus === "jaehrlich" || rhythmus === "jährlich" || rhythmus === "12") {
+  if (rhythmus === "12") {
     jaehrlich = rawBetrag;
     monatlich = rawBetrag / 12;
   } else {
@@ -185,7 +180,7 @@ function speichereVertragHandler(e) {
     vertragsDaten[editIndex].jaehrlich = jaehrlich;
     vertragsDaten[editIndex].monatlich = monatlich;
     editIndex = null;
-    document.getElementById("vertragSpeichern").textContent = "Vertrag speichern";
+    document.getElementById("vertragSpeichern").textContent = "Vertrag hinzufügen";
   } else {
     vertragsDaten.push({
       kategorie: aktuelleKategorie,
@@ -221,7 +216,7 @@ window.loescheVertrag = function(index) {
   }
 };
 
-// --- BERECHNUNGEN ---
+// --- DYNAMISCHE SUMMENBERECHUNG NORMALTER / GEFILTERTER BEREICH ---
 function berechneVertragssumme() {
   const sucheInput = document.getElementById("sucheVertrag");
   const suchBegriff = sucheInput ? sucheInput.value.toLowerCase().trim() : "";
@@ -229,6 +224,7 @@ function berechneVertragssumme() {
   const filterSelect = document.getElementById("filterKategorie");
   const gewaehlteKategorie = filterSelect ? filterSelect.value : "";
 
+  // Nur Verträge berücksichtigen, die zur aktuellen Suche/Filterung passen
   const gefilterteVertraege = vertragsDaten.filter(v => {
     const kat = v.kategorie || "Allgemein";
     const nameMatch = v.name && v.name.toLowerCase().includes(suchBegriff);
@@ -257,12 +253,6 @@ function berechneVertragssumme() {
   return gefilterteSumme;
 }
 
-/**
- * Aufschlüsselung nach Einkommensverteiler:
- * - Auto: 350 € (fix)
- * - Versicherungen: IST-Stand aus vertragsDaten (Kategorie "Versicherungen")
- * - Gläubiger: IST-Stand aller restlichen Verträge
- */
 function berechneKategorienBedarf() {
   const autoFix = 350;
 
@@ -276,19 +266,6 @@ function berechneKategorienBedarf() {
 
   const gesamtFixkosten = autoFix + versicherungenIst + glaubigerIst;
 
-  // UI-Aktualisierung (falls HTML-Elemente vorhanden sind)
-  const autoEl = document.getElementById("bedarfAuto");
-  if (autoEl) autoEl.textContent = formatWaehrung(autoFix);
-
-  const versicherungEl = document.getElementById("bedarfVersicherungen");
-  if (versicherungEl) versicherungEl.textContent = formatWaehrung(versicherungenIst);
-
-  const glaubigerEl = document.getElementById("bedarfGlaubiger");
-  if (glaubigerEl) glaubigerEl.textContent = formatWaehrung(glaubigerIst);
-
-  const gesamtEl = document.getElementById("bedarfGesamt");
-  if (gesamtEl) gesamtEl.textContent = formatWaehrung(gesamtFixkosten);
-
   return { autoFix, versicherungenIst, glaubigerIst, gesamtFixkosten };
 }
 
@@ -299,8 +276,6 @@ function berechneFinanzen() {
   if (!nettoInput || !restAnzeige) return;
 
   const netto = parseFloat(nettoInput.value.replace(",", ".")) || 0;
-  
-  // Nutzt die dynamisch berechneten Fixkosten
   const { gesamtFixkosten } = berechneKategorienBedarf();
 
   const verfuegbar = netto - gesamtFixkosten;
