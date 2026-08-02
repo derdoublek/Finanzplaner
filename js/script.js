@@ -32,7 +32,13 @@ function initDaten() {
 
   if (gespeicherteVertraege) {
     try {
-      vertragsDaten = JSON.parse(gespeicherteVertraege);
+      const parsed = JSON.parse(gespeicherteVertraege);
+      // Wenn localStorage existiert, aber leer ist, geladene Daten aus daten.js nutzen
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        vertragsDaten = parsed;
+      } else {
+        vertragsDaten = typeof vertraege !== "undefined" ? [...vertraege] : [];
+      }
     } catch (e) {
       vertragsDaten = typeof vertraege !== "undefined" ? [...vertraege] : [];
     }
@@ -68,8 +74,7 @@ function setupEventListeners() {
     nettoInput.addEventListener("input", berechneFinanzen);
   }
 
-  // Korrektur: Feste ID statt querySelectorAll
-  const kontoInput = document.getElementById("kontostand") || document.querySelectorAll("input[type='number']")[1];
+  const kontoInput = document.querySelectorAll("input[type='number']")[1];
   if (kontoInput) {
     kontoInput.addEventListener("input", updatePuffer);
   }
@@ -88,7 +93,7 @@ function befuelleKategorieFilter() {
   if (!filterSelect) return;
 
   const aktuelleAuswahl = filterSelect.value;
-  const kategorien = [...new Set(vertragsDaten.map(v => v.kategorie || "Allgemein"))].sort();
+  const kategorien = [...new Set(vertragsDaten.map(v => v.kategorie || "Sonstiges"))].sort();
 
   filterSelect.innerHTML = '<option value="">Alle Kategorien</option>';
   kategorien.forEach(kat => {
@@ -113,7 +118,7 @@ function renderVertragstabelle() {
   targetElement.innerHTML = "";
 
   vertragsDaten.forEach((v, index) => {
-    const kat = v.kategorie || "Allgemein";
+    const kat = v.kategorie || "Sonstiges";
     const nameMatch = v.name && v.name.toLowerCase().includes(suchBegriff);
     const katMatch = kat.toLowerCase().includes(suchBegriff);
 
@@ -148,12 +153,14 @@ function speichereVertragHandler(e) {
   const nameInput = document.getElementById("vertragName");
   const betragInput = document.getElementById("vertragBetrag");
   const rhythmusSelect = document.getElementById("vertragRhythmus");
+  const kategorieSelect = document.getElementById("vertragKategorie");
 
   if (!nameInput || !betragInput) return;
 
   const name = nameInput.value.trim();
   const rawBetrag = parseFloat(betragInput.value.replace(",", "."));
-  const rhythmus = rhythmusSelect ? rhythmusSelect.value : "monatlich";
+  const rhythmus = rhythmusSelect ? rhythmusSelect.value : "1";
+  const kategorie = kategorieSelect ? kategorieSelect.value : "Sonstiges";
 
   if (!name || isNaN(rawBetrag) || rawBetrag <= 0) {
     alert("Bitte gib einen gültigen Namen und Betrag ein.");
@@ -163,16 +170,20 @@ function speichereVertragHandler(e) {
   let monatlich = 0;
   let jaehrlich = 0;
 
-  if (rhythmus === "jaehrlich" || rhythmus === "jährlich" || rhythmus === "12") {
+  const monateProJahr = parseInt(rhythmus, 10) || 1;
+  if (monateProJahr === 12) {
     jaehrlich = rawBetrag;
     monatlich = rawBetrag / 12;
+  } else if (monateProJahr === 6) {
+    jaehrlich = rawBetrag * 2;
+    monatlich = jaehrlich / 12;
+  } else if (monateProJahr === 3) {
+    jaehrlich = rawBetrag * 4;
+    monatlich = jaehrlich / 12;
   } else {
     monatlich = rawBetrag;
     jaehrlich = rawBetrag * 12;
   }
-
-  // Korrektur: Bestehende Kategorie beim Bearbeiten erhalten
-  const kategorie = editIndex !== null ? (vertragsDaten[editIndex].kategorie || "Manuell") : "Manuell";
 
   const neuerVertrag = {
     kategorie,
@@ -184,7 +195,7 @@ function speichereVertragHandler(e) {
   if (editIndex !== null) {
     vertragsDaten[editIndex] = neuerVertrag;
     editIndex = null;
-    document.getElementById("vertragSpeichern").textContent = "Vertrag speichern";
+    document.getElementById("vertragSpeichern").textContent = "➕ Vertrag hinzufügen";
   } else {
     vertragsDaten.push(neuerVertrag);
   }
@@ -202,9 +213,12 @@ window.bearbeiteVertrag = function(index) {
 
   document.getElementById("vertragName").value = v.name || "";
   document.getElementById("vertragBetrag").value = v.monatlich || "";
+  if (document.getElementById("vertragKategorie")) {
+    document.getElementById("vertragKategorie").value = v.kategorie || "Sonstiges";
+  }
 
   editIndex = index;
-  document.getElementById("vertragSpeichern").textContent = "Änderung speichern";
+  document.getElementById("vertragSpeichern").textContent = "✏️ Änderung speichern";
 };
 
 window.loescheVertrag = function(index) {
@@ -213,7 +227,7 @@ window.loescheVertrag = function(index) {
     
     if (editIndex === index) {
       editIndex = null;
-      document.getElementById("vertragSpeichern").textContent = "Vertrag speichern";
+      document.getElementById("vertragSpeichern").textContent = "➕ Vertrag hinzufügen";
     }
     
     speichereInLocalStorage();
@@ -251,7 +265,7 @@ function berechneFinanzen() {
 }
 
 function updatePuffer() {
-  const konto = document.getElementById("kontostand") || document.querySelectorAll("input[type='number']")[1];
+  const konto = document.querySelectorAll("input[type='number']")[1];
   const u = document.getElementById("ueberschuss");
   const s = document.getElementById("pufferStatus");
 
