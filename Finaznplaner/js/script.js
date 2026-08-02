@@ -177,19 +177,22 @@ function speichereVertragHandler(e) {
     jaehrlich = rawBetrag * 12;
   }
 
-  const neuerVertrag = {
-    kategorie: "Manuell",
-    name,
-    jaehrlich,
-    monatlich
-  };
+  const filterSelect = document.getElementById("filterKategorie");
+  const aktuelleKategorie = (filterSelect && filterSelect.value) ? filterSelect.value : "Manuell";
 
   if (editIndex !== null) {
-    vertragsDaten[editIndex] = neuerVertrag;
+    vertragsDaten[editIndex].name = name;
+    vertragsDaten[editIndex].jaehrlich = jaehrlich;
+    vertragsDaten[editIndex].monatlich = monatlich;
     editIndex = null;
     document.getElementById("vertragSpeichern").textContent = "Vertrag speichern";
   } else {
-    vertragsDaten.push(neuerVertrag);
+    vertragsDaten.push({
+      kategorie: aktuelleKategorie,
+      name,
+      jaehrlich,
+      monatlich
+    });
   }
 
   speichereInLocalStorage();
@@ -220,17 +223,73 @@ window.loescheVertrag = function(index) {
 
 // --- BERECHNUNGEN ---
 function berechneVertragssumme() {
-  const gesamtMonatlich = vertragsDaten.reduce(
+  const sucheInput = document.getElementById("sucheVertrag");
+  const suchBegriff = sucheInput ? sucheInput.value.toLowerCase().trim() : "";
+
+  const filterSelect = document.getElementById("filterKategorie");
+  const gewaehlteKategorie = filterSelect ? filterSelect.value : "";
+
+  const gefilterteVertraege = vertragsDaten.filter(v => {
+    const kat = v.kategorie || "Allgemein";
+    const nameMatch = v.name && v.name.toLowerCase().includes(suchBegriff);
+    const katMatch = kat.toLowerCase().includes(suchBegriff);
+
+    const suchePassend = suchBegriff === "" || nameMatch || katMatch;
+    const kategoriePassend = gewaehlteKategorie === "" || kat === gewaehlteKategorie;
+
+    return suchePassend && kategoriePassend;
+  });
+
+  const gefilterteSumme = gefilterteVertraege.reduce(
     (summe, v) => summe + (v.monatlich || 0),
     0
   );
 
   const gesamtAnzeige = document.getElementById("gesamtVertraege");
   if (gesamtAnzeige) {
-    gesamtAnzeige.textContent = formatWaehrung(gesamtMonatlich);
+    const titelText = gewaehlteKategorie 
+      ? `Monatlicher Bedarf (${escapeHtml(gewaehlteKategorie)}): ` 
+      : "Monatlicher Bedarf: ";
+    
+    gesamtAnzeige.innerHTML = `${titelText}<strong>${formatWaehrung(gefilterteSumme)}</strong>`;
   }
 
-  return gesamtMonatlich;
+  return gefilterteSumme;
+}
+
+/**
+ * Aufschlüsselung nach Einkommensverteiler:
+ * - Auto: 350 € (fix)
+ * - Versicherungen: IST-Stand aus vertragsDaten (Kategorie "Versicherungen")
+ * - Gläubiger: IST-Stand aller restlichen Verträge
+ */
+function berechneKategorienBedarf() {
+  const autoFix = 350;
+
+  const versicherungenIst = vertragsDaten
+    .filter(v => (v.kategorie || "").toLowerCase() === "versicherungen")
+    .reduce((sum, v) => sum + (v.monatlich || 0), 0);
+
+  const glaubigerIst = vertragsDaten
+    .filter(v => (v.kategorie || "").toLowerCase() !== "versicherungen")
+    .reduce((sum, v) => sum + (v.monatlich || 0), 0);
+
+  const gesamtFixkosten = autoFix + versicherungenIst + glaubigerIst;
+
+  // UI-Aktualisierung (falls HTML-Elemente vorhanden sind)
+  const autoEl = document.getElementById("bedarfAuto");
+  if (autoEl) autoEl.textContent = formatWaehrung(autoFix);
+
+  const versicherungEl = document.getElementById("bedarfVersicherungen");
+  if (versicherungEl) versicherungEl.textContent = formatWaehrung(versicherungenIst);
+
+  const glaubigerEl = document.getElementById("bedarfGlaubiger");
+  if (glaubigerEl) glaubigerEl.textContent = formatWaehrung(glaubigerIst);
+
+  const gesamtEl = document.getElementById("bedarfGesamt");
+  if (gesamtEl) gesamtEl.textContent = formatWaehrung(gesamtFixkosten);
+
+  return { autoFix, versicherungenIst, glaubigerIst, gesamtFixkosten };
 }
 
 function berechneFinanzen() {
@@ -240,10 +299,11 @@ function berechneFinanzen() {
   if (!nettoInput || !restAnzeige) return;
 
   const netto = parseFloat(nettoInput.value.replace(",", ".")) || 0;
-  const vertragsSumme = berechneVertragssumme();
-  const fixkosten = Math.max(2305, vertragsSumme);
+  
+  // Nutzt die dynamisch berechneten Fixkosten
+  const { gesamtFixkosten } = berechneKategorienBedarf();
 
-  const verfuegbar = netto - fixkosten;
+  const verfuegbar = netto - gesamtFixkosten;
   restAnzeige.textContent = formatWaehrung(verfuegbar);
 }
 
