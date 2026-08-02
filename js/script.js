@@ -68,9 +68,10 @@ function setupEventListeners() {
     nettoInput.addEventListener("input", berechneFinanzen);
   }
 
-  const konto = document.querySelectorAll("input[type='number']")[1];
-  if (konto) {
-    konto.addEventListener("input", updatePuffer);
+  // Korrektur: Feste ID statt querySelectorAll
+  const kontoInput = document.getElementById("kontostand") || document.querySelectorAll("input[type='number']")[1];
+  if (kontoInput) {
+    kontoInput.addEventListener("input", updatePuffer);
   }
 }
 
@@ -82,16 +83,11 @@ function renderAll() {
   updatePuffer();
 }
 
-/**
- * Befüllt das Kategorie-Dropdown dynamisch mit allen vorhandenen Kategorien aus daten.js
- */
 function befuelleKategorieFilter() {
   const filterSelect = document.getElementById("filterKategorie");
   if (!filterSelect) return;
 
   const aktuelleAuswahl = filterSelect.value;
-
-  // Eindeutige Kategorien ermitteln
   const kategorien = [...new Set(vertragsDaten.map(v => v.kategorie || "Allgemein"))].sort();
 
   filterSelect.innerHTML = '<option value="">Alle Kategorien</option>';
@@ -109,10 +105,8 @@ function renderVertragstabelle() {
   if (!tabelle) return;
 
   const targetElement = tabelle.querySelector("tbody") || tabelle;
-
   const sucheInput = document.getElementById("sucheVertrag");
   const suchBegriff = sucheInput ? sucheInput.value.toLowerCase().trim() : "";
-
   const filterSelect = document.getElementById("filterKategorie");
   const gewaehlteKategorie = filterSelect ? filterSelect.value : "";
 
@@ -177,8 +171,11 @@ function speichereVertragHandler(e) {
     jaehrlich = rawBetrag * 12;
   }
 
+  // Korrektur: Bestehende Kategorie beim Bearbeiten erhalten
+  const kategorie = editIndex !== null ? (vertragsDaten[editIndex].kategorie || "Manuell") : "Manuell";
+
   const neuerVertrag = {
-    kategorie: "Manuell",
+    kategorie,
     name,
     jaehrlich,
     monatlich
@@ -213,6 +210,12 @@ window.bearbeiteVertrag = function(index) {
 window.loescheVertrag = function(index) {
   if (confirm(`Möchtest du "${vertragsDaten[index].name}" wirklich löschen?`)) {
     vertragsDaten.splice(index, 1);
+    
+    if (editIndex === index) {
+      editIndex = null;
+      document.getElementById("vertragSpeichern").textContent = "Vertrag speichern";
+    }
+    
     speichereInLocalStorage();
     renderAll();
   }
@@ -248,7 +251,7 @@ function berechneFinanzen() {
 }
 
 function updatePuffer() {
-  const konto = document.querySelectorAll("input[type='number']")[1];
+  const konto = document.getElementById("kontostand") || document.querySelectorAll("input[type='number']")[1];
   const u = document.getElementById("ueberschuss");
   const s = document.getElementById("pufferStatus");
 
