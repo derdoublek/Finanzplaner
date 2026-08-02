@@ -110,15 +110,32 @@ style="padding:10px;font-size:22px;width:220px;">
 
 <div class="card">
 
-<h2>🏦 Vertragsverwaltung Gläubigerkonto</h2>
+<details>
+<summary style="cursor: pointer; font-size: 20px; font-weight: bold; user-select: none;">
+🏦 Vertragsverwaltung Gläubigerkonto
+</summary>
+
+<div style="margin-top: 18px;">
+
+<div style="display: flex; gap: 10px; margin: 12px 0;">
+  <input
+    id="sucheVertrag"
+    type="text"
+    placeholder="🔍 Vertrag suchen..."
+    style="flex: 1;"
+  >
+  <select id="filterKategorie" style="width: auto; min-width: 160px;">
+    <option value="">Alle Kategorien</option>
+  </select>
+</div>
 
 <table id="vertragstabelle">
 
 <thead>
 <tr>
+<th>Kategorie</th>
 <th>Vertrag</th>
-<th>Betrag</th>
-<th>Rhythmus</th>
+<th>Jahr</th>
 <th>Monat</th>
 <th></th>
 </tr>
@@ -184,6 +201,9 @@ Monatlicher Bedarf:
 </span>
 
 </div>
+</div>
+
+</details>
 
 </div>
 
@@ -191,7 +211,7 @@ Monatlicher Bedarf:
 
 </div>
 
+<script src="js/daten.js"></script>
 <script src="js/script.js"></script>
-
 </body>
 </html>
