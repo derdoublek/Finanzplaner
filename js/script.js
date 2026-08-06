@@ -3,10 +3,12 @@ function initApp() {
   const STORAGE_KEY_VERTRAEGE = 'family_finance_vertraege';
   const STORAGE_KEY_NETTO = 'family_finance_netto';
   const STORAGE_KEY_KONTOSTAND = 'family_finance_kontostand';
+  const STORAGE_KEY_DATUM = 'family_finance_datum';
 
   // --- 1. BERECHNUNG EINKOMMEN & KONTOSTAND ---
   const nettoInput = document.getElementById('netto');
   const kontostandInput = document.getElementById('kontostand');
+  const datumInput = document.querySelector('input[type="date"]');
   const restDisplay = document.getElementById('rest');
   const ueberschussDisplay = document.getElementById('ueberschuss');
   const pufferStatusDisplay = document.getElementById('pufferStatus');
@@ -14,12 +16,17 @@ function initApp() {
   const fixkostenGesamt = 2305;
   const zielpuffer = 750;
 
-  // Werte aus localStorage laden, falls vorhanden
+  // Werte aus localStorage laden
   if (nettoInput && localStorage.getItem(STORAGE_KEY_NETTO) !== null) {
     nettoInput.value = localStorage.getItem(STORAGE_KEY_NETTO);
   }
   if (kontostandInput && localStorage.getItem(STORAGE_KEY_KONTOSTAND) !== null) {
     kontostandInput.value = localStorage.getItem(STORAGE_KEY_KONTOSTAND);
+  }
+  if (datumInput && localStorage.getItem(STORAGE_KEY_DATUM) !== null) {
+    datumInput.value = localStorage.getItem(STORAGE_KEY_DATUM);
+  } else if (datumInput && !datumInput.value) {
+    datumInput.value = new Date().toISOString().split('T')[0];
   }
 
   function berechneFinanzen() {
@@ -34,6 +41,13 @@ function initApp() {
       const kontostand = parseFloat(kontostandInput.value) || 0;
       const ueberschuss = kontostand - zielpuffer;
       localStorage.setItem(STORAGE_KEY_KONTOSTAND, kontostandInput.value);
+
+      // Automatisches Datum auf heute setzen beim Ändern des Kontostands
+      if (datumInput) {
+        const heute = new Date().toISOString().split('T')[0];
+        datumInput.value = heute;
+        localStorage.setItem(STORAGE_KEY_DATUM, heute);
+      }
 
       if (ueberschuss >= 0) {
         ueberschussDisplay.textContent = ueberschuss.toLocaleString('de-DE') + ' €';
@@ -50,6 +64,13 @@ function initApp() {
 
   if (nettoInput) nettoInput.addEventListener('input', berechneFinanzen);
   if (kontostandInput) kontostandInput.addEventListener('input', berechneFinanzen);
+  
+  if (datumInput) {
+    datumInput.addEventListener('change', () => {
+      localStorage.setItem(STORAGE_KEY_DATUM, datumInput.value);
+    });
+  }
+
   berechneFinanzen();
 
   // --- 2. VERTRAGSTABELLE MIT BEARBEITUNGSFUNKTION & STORAGE ---
@@ -58,7 +79,6 @@ function initApp() {
   const sucheInput = document.getElementById('sucheVertrag');
   const filterKategorie = document.getElementById('filterKategorie');
 
-  // Verträge aus localStorage laden, sonst auf die globale Variable 'vertraege' zurückgreifen
   let vertragsDaten = [];
   const gespeicherteVertraege = localStorage.getItem(STORAGE_KEY_VERTRAEGE);
   if (gespeicherteVertraege) {
@@ -111,7 +131,6 @@ function initApp() {
       const tr = document.createElement('tr');
 
       if (currentEditIndex === globalIndex) {
-        // Bearbeitungsmodus für diese Zeile
         tr.innerHTML = `
           <td style="padding: 6px;">
             <input type="text" id="editKat" value="${v.kategorie}" style="width: 100%; padding: 4px;">
@@ -128,7 +147,6 @@ function initApp() {
           </td>
         `;
       } else {
-        // Normale Ansicht
         tr.innerHTML = `
           <td style="padding: 10px;"><b>${v.kategorie}</b></td>
           <td style="padding: 10px;">${v.name}</td>
@@ -226,4 +244,3 @@ if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', initApp);
 } else {
   initApp();
-}
