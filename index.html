@@ -4,269 +4,177 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Finanzplaner Familie Kremer</title>
-
 <link rel="stylesheet" href="css/style.css">
 </head>
 
 <body>
 
 <header>
-<div class="header-logo">
-<img src="img/logo.png">
-<div class="header-text">
-<h1>Finanzplaner Familie Kremer</h1>
-<p>Deine Familienfinanzen im Blick.</p>
-</div>
-</div>
+  <div class="header-logo">
+    <img src="img/logo.png" alt="Logo">
+    <div class="header-text">
+      <h1>Finanzplaner Familie Kremer</h1>
+      <p>Deine Familienfinanzen im Blick.</p>
+    </div>
+  </div>
 </header>
 
 <div class="container">
 
-<div class="grid">
+  <div class="grid">
 
-<div class="card">
+    <!-- 1. EINKOMMEN -->
+    <div class="card">
+      <div>
+        <h2>💵 Einkommen</h2>
+        <label style="display:block;font-size:14px;color:#666;margin-bottom:6px;">Monatsnetto</label>
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:18px;">
+          <input id="netto" type="number" value="3500" style="padding:10px;font-size:24px;font-weight:bold;width:180px;">
+          <span style="font-size:24px;font-weight:bold;">€</span>
+        </div>
+      </div>
 
-<h2>💶 Einkommen</h2>
+      <div style="margin-top: auto;">
+        <p style="margin-bottom:4px;">💰 Verfügbar</p>
+        <div class="big green" id="rest">1.195 €</div>
+      </div>
+    </div>
 
-<label style="display:block;font-size:14px;color:#666;margin-bottom:6px;">Monatsnetto</label>
-<div style="display:flex;align-items:center;gap:8px;margin-bottom:18px;">
-<input id="netto" type="number" value="3500"
-style="padding:10px;font-size:24px;font-weight:bold;width:180px;">
-<span style="font-size:24px;font-weight:bold;">€</span>
-</div>
+    <!-- 2. FIXKOSTEN -->
+    <div class="card">
+      <div>
+        <h2>📊 Fixkosten</h2>
+        <p style="margin-top:-8px;color:#666;font-size:14px;margin-bottom:14px;">laut Einkommensverteiler</p>
 
-<p>💰 Verfügbar</p>
-<div class="big" id="rest">1.195 €</div>
+        <p>🚗 Auto <b style="float:right;" id="fixAuto">350 €</b></p>
 
-</div>
+        <p>🛡 Versicherungen <b style="float:right;">250 €</b><br>
+          <span style="font-size:13px;color:#666;">
+            Tatsächlicher Bedarf: <b id="bedarfVersicherungen">171 €</b>
+          </span>
+        </p>
 
-<div class="card">
-<h2>📊 Fixkosten</h2>
-<p style="margin-top:-8px;color:#666;font-size:14px;">laut Einkommensverteiler</p>
+        <p>🏠 Gläubigerkonto <b style="float:right;" id="fixGlaeubiger">1.705 €</b></p>
+      </div>
 
-<p>🚗 Auto <b style="float:right;">350 €</b></p>
+      <div style="margin-top: auto;">
+        <hr>
+        <div class="total" id="gesamtFixkosten">
+          Gesamt: 2.305 €
+        </div>
+      </div>
+    </div>
 
-<p>🛡 Versicherungen
-<b style="float:right;">250 €</b><br>
-<span style="font-size:13px;color:#666;">
-Tatsächlicher Bedarf:
-<b>171 €</b>
-</span>
-</p>
+    <!-- 3. GLÄUBIGERKONTO -->
+    <div class="card">
+      <div>
+        <h2>🏦 Gläubigerkonto</h2>
 
-<p>🏠 Gläubigerkonto
-<b style="float:right;">1.705 €</b>
-</p>
+        <label style="font-size:14px;color:#666;">Stand vom</label><br>
+        <input type="date" style="padding:8px;margin:6px 0 14px;width:180px;"><br>
 
-<hr>
+        <label style="display:block;margin:6px 0 6px;font-size:14px;color:#666;">
+          Tagesaktueller Kontostand
+        </label>
 
-<div class="total">
-Gesamt: 2.305 €
-</div>
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px;">
+          <input id="kontostand" type="number" value="839" style="padding:10px;font-size:22px;width:180px;font-weight:bold;">
+          <span style="font-size:22px;font-weight:bold;">€</span>
+        </div>
+      </div>
 
-</div>
+      <div style="margin-top: auto;">
+        <p style="margin-bottom:8px;">Zielpuffer <b>750 €</b></p>
 
-<div class="card">
+        <div style="display:flex;justify-content:space-between;margin:8px 0;">
+          <span>Überschuss</span>
+          <b id="ueberschuss">89 €</b>
+        </div>
 
-<h2>🏦 Gläubigerkonto</h2>
+        <p id="pufferStatus" class="green" style="margin-bottom:0;">
+          🟢 Du kannst 89 € entnehmen.
+        </p>
+      </div>
+    </div>
 
-<label>Stand vom</label><br>
-
-<input type="date"
-style="padding:8px;margin:8px 0 18px;width:180px;">
-
-<br>
-
-<label style="display:block;margin:18px 0 12px;">
-Tagesaktueller Kontostand
-</label>
-
-<input id="kontostand" type="number"
-value="839"
-style="padding:10px;font-size:22px;width:220px;">
-
-<span style="font-size:22px;font-weight:bold;">€</span>
-
-<br><br>
-
-<p>Zielpuffer <b>750 €</b></p>
-
-<div style="display:flex;justify-content:space-between;margin:14px 0;">
-<span>Überschuss</span>
-<b id="ueberschuss">89 €</b>
-</div>
-
-<p id="pufferStatus" class="green">
-🟢 Du kannst 89 € entnehmen.
-</p>
-
-</div>
-
-</div>
-
-<br><br>
-
-<div class="grid">
-
-<div class="card">
-
-<details>
-<summary style="cursor: pointer; font-size: 20px; font-weight: bold; user-select: none;">
-🏦 Vertragsverwaltung Gläubigerkonto
-</summary>
-
-<div style="margin-top: 18px;">
-
-<div style="display: flex; gap: 10px; margin: 12px 0;">
-  <input
-    id="sucheVertrag"
-    type="text"
-    placeholder="🔍 Vertrag suchen..."
-    style="flex: 1;"
-  >
-  <select id="filterKategorie" style="width: auto; min-width: 160px;">
-    <option value="">Alle Kategorien</option>
-  </select>
-</div>
-
-<table id="vertragstabelle">
-
-<thead>
-<tr>
-<th>Kategorie</th>
-<th>Vertrag</th>
-<th>Jahr</th>
-<th>Monat</th>
-<th></th>
-</tr>
-</thead>
-
-<tbody>
-
-</tbody>
-
-</table>
-
-<hr>
-
-<div class="total">
-
-Monatlicher Bedarf:
-
-<span id="gesamtVertraege">
-
-0 €
-
-</span>
-
-</div>
-
-<hr>
-
-<details>
-  <summary style="cursor: pointer; font-size: 18px; font-weight: bold; user-select: none; margin: 10px 0;">
-    ➕ Neuer Vertrag hinzufügen
-  </summary>
-
-  <div style="margin-top: 15px;">
-    <input
-      id="vertragName"
-      type="text"
-      placeholder="Vertragsname"
-      style="width:100%;padding:10px;"
-    >
-
-    <br><br>
-
-    <input
-      id="vertragBetrag"
-      type="number"
-      placeholder="Betrag"
-      style="width:220px;padding:10px;"
-    >
-
-    <span style="font-size:20px;font-weight:bold;">€</span>
-
-    <br><br>
-
-    <select id="vertragRhythmus" style="padding:10px;">
-      <option value="1">Monatlich</option>
-      <option value="3">Vierteljährlich</option>
-      <option value="6">Halbjährlich</option>
-      <option value="12">Jährlich</option>
-    </select>
-
-    <br><br>
-
-    <select id="vertragKategorie" style="padding:10px;">
-      <option value="Auto">Auto</option>
-      <option value="Wohnen">Wohnen</option>
-      <option value="Versicherung">Versicherung</option>
-      <option value="Abonnement">Abonnement</option>
-      <option value="Sonstiges">Sonstiges</option>
-    </select>
-
-    <br><br>
-
-    <button id="vertragSpeichern">
-      ➕ Vertrag hinzufügen
-    </button>
   </div>
-</details>
 
-</div>
+  <br><br>
 
-</details>
+  <!-- VERTRAGSVERWALTUNG (Standardmäßig zugeklappt) -->
+  <div class="grid">
+    <div class="card" style="width:100%;">
+      <details>
+        <summary style="cursor: pointer; font-size: 20px; font-weight: bold; user-select: none;">
+          🏦 Vertragsverwaltung Gläubigerkonto
+        </summary>
 
-</div>
+        <div style="margin-top: 18px;">
+          <div style="display: flex; gap: 10px; margin: 12px 0;">
+            <input id="sucheVertrag" type="text" placeholder="🔍 Vertrag suchen..." style="flex: 1;">
+            <select id="filterKategorie" style="width: auto; min-width: 160px;">
+              <option value="">Alle Kategorien</option>
+            </select>
+          </div>
 
-</div>
+          <table id="vertragstabelle">
+            <thead>
+              <tr>
+                <th>Kategorie</th>
+                <th>Vertrag</th>
+                <th>Jahr</th>
+                <th>Monat</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+
+          <hr>
+
+          <div class="total">
+            Monatlicher Bedarf: <span id="gesamtVertraege">0 €</span>
+          </div>
+
+          <hr>
+
+          <details>
+            <summary style="cursor: pointer; font-size: 18px; font-weight: bold; user-select: none; margin: 10px 0;">
+              ➕ Neuer Vertrag hinzufügen
+            </summary>
+
+            <div style="margin-top: 15px;">
+              <input id="vertragName" type="text" placeholder="Vertragsname" style="width:100%;padding:10px;"><br><br>
+              <input id="vertragBetrag" type="number" placeholder="Betrag" style="width:220px;padding:10px;">
+              <span style="font-size:20px;font-weight:bold;">€</span><br><br>
+
+              <select id="vertragRhythmus" style="padding:10px;">
+                <option value="1">Monatlich</option>
+                <option value="3">Vierteljährlich</option>
+                <option value="6">Halbjährlich</option>
+                <option value="12">Jährlich</option>
+              </select><br><br>
+
+              <select id="vertragKategorie" style="padding:10px;">
+                <option value="Auto">Auto</option>
+                <option value="Wohnen">Wohnen</option>
+                <option value="Versicherung">Versicherung</option>
+                <option value="Gläubiger">Gläubiger</option>
+                <option value="Sonstiges">Sonstiges</option>
+              </select><br><br>
+
+              <button id="vertragSpeichern">➕ Vertrag hinzufügen</button>
+            </div>
+          </details>
+        </div>
+      </details>
+    </div>
+  </div>
 
 </div>
 
 <script src="js/daten.js?v=1.1"></script>
-<script src="js/script.js?v=1.1"></script>
+<script src="js/script.js?v=1.0"></script>
 
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-  const nettoInput = document.getElementById('netto');
-  const kontostandInput = document.getElementById('kontostand');
-  const restDisplay = document.getElementById('rest');
-  const ueberschussDisplay = document.getElementById('ueberschuss');
-  const pufferStatusDisplay = document.getElementById('pufferStatus');
-
-  const fixkostenGesamt = 2305;
-  const zielpuffer = 750;
-
-  function berechneFinanzen() {
-    // 1. Berechnung Einkommen / Verfügbar
-    const netto = parseFloat(nettoInput.value) || 0;
-    const verfuegbar = netto - fixkostenGesamt;
-    restDisplay.textContent = verfuegbar.toLocaleString('de-DE') + ' €';
-
-    // 2. Berechnung Gläubigerkonto / Überschuss
-    const kontostand = parseFloat(kontostandInput.value) || 0;
-    const ueberschuss = kontostand - zielpuffer;
-
-    if (ueberschuss >= 0) {
-      ueberschussDisplay.textContent = ueberschuss.toLocaleString('de-DE') + ' €';
-      pufferStatusDisplay.className = 'green';
-      pufferStatusDisplay.textContent = '🟢 Du kannst ' + ueberschuss.toLocaleString('de-DE') + ' € entnehmen.';
-    } else {
-      const fehlbetrag = Math.abs(ueberschuss);
-      ueberschussDisplay.textContent = '-' + fehlbetrag.toLocaleString('de-DE') + ' €';
-      pufferStatusDisplay.className = 'red';
-      pufferStatusDisplay.textContent = '🔴 Es fehlen ' + fehlbetrag.toLocaleString('de-DE') + ' € zum Zielpuffer.';
-    }
-  }
-
-  // Event Listener für Echtzeit-Berechnung bei Eingabe
-  if (nettoInput) nettoInput.addEventListener('input', berechneFinanzen);
-  if (kontostandInput) kontostandInput.addEventListener('input', berechneFinanzen);
-
-  // Erstberechnung ausführen
-  berechneFinanzen();
-});
-</script>
 </body>
 </html>

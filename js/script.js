@@ -1,11 +1,9 @@
 function initApp() {
-  // --- LOCALSTORAGE KEYS ---
   const STORAGE_KEY_VERTRAEGE = 'family_finance_vertraege';
   const STORAGE_KEY_NETTO = 'family_finance_netto';
   const STORAGE_KEY_KONTOSTAND = 'family_finance_kontostand';
   const STORAGE_KEY_DATUM = 'family_finance_datum';
 
-  // --- 1. BERECHNUNG EINKOMMEN & KONTOSTAND ---
   const nettoInput = document.getElementById('netto');
   const kontostandInput = document.getElementById('kontostand');
   const datumInput = document.querySelector('input[type="date"]');
@@ -13,10 +11,15 @@ function initApp() {
   const ueberschussDisplay = document.getElementById('ueberschuss');
   const pufferStatusDisplay = document.getElementById('pufferStatus');
 
-  const fixkostenGesamt = 2305;
+  const fixAutoDisplay = document.getElementById('fixAuto');
+  const bedarfVersicherungenDisplay = document.getElementById('bedarfVersicherungen');
+  const fixGlaeubigerDisplay = document.getElementById('fixGlaeubiger');
+  const gesamtFixkostenDisplay = document.getElementById('gesamtFixkosten');
+
+  const fixAutoWert = 350;
+  const fixVersicherungenStarr = 250;
   const zielpuffer = 750;
 
-  // Werte aus localStorage laden
   if (nettoInput && localStorage.getItem(STORAGE_KEY_NETTO) !== null) {
     nettoInput.value = localStorage.getItem(STORAGE_KEY_NETTO);
   }
@@ -25,55 +28,8 @@ function initApp() {
   }
   if (datumInput && localStorage.getItem(STORAGE_KEY_DATUM) !== null) {
     datumInput.value = localStorage.getItem(STORAGE_KEY_DATUM);
-  } else if (datumInput && !datumInput.value) {
-    datumInput.value = new Date().toISOString().split('T')[0];
   }
 
-  function berechneFinanzen() {
-    if (nettoInput && restDisplay) {
-      const netto = parseFloat(nettoInput.value) || 0;
-      const verfuegbar = netto - fixkostenGesamt;
-      restDisplay.textContent = verfuegbar.toLocaleString('de-DE') + ' €';
-      localStorage.setItem(STORAGE_KEY_NETTO, nettoInput.value);
-    }
-
-    if (kontostandInput && ueberschussDisplay && pufferStatusDisplay) {
-      const kontostand = parseFloat(kontostandInput.value) || 0;
-      const ueberschuss = kontostand - zielpuffer;
-      localStorage.setItem(STORAGE_KEY_KONTOSTAND, kontostandInput.value);
-
-      // Automatisches Datum auf heute setzen beim Ändern des Kontostands
-      if (datumInput) {
-        const heute = new Date().toISOString().split('T')[0];
-        datumInput.value = heute;
-        localStorage.setItem(STORAGE_KEY_DATUM, heute);
-      }
-
-      if (ueberschuss >= 0) {
-        ueberschussDisplay.textContent = ueberschuss.toLocaleString('de-DE') + ' €';
-        pufferStatusDisplay.className = 'green';
-        pufferStatusDisplay.textContent = '🟢 Du kannst ' + ueberschuss.toLocaleString('de-DE') + ' € entnehmen.';
-      } else {
-        const fehlbetrag = Math.abs(ueberschuss);
-        ueberschussDisplay.textContent = '-' + fehlbetrag.toLocaleString('de-DE') + ' €';
-        pufferStatusDisplay.className = 'red';
-        pufferStatusDisplay.textContent = '🔴 Es fehlen ' + fehlbetrag.toLocaleString('de-DE') + ' € zum Zielpuffer.';
-      }
-    }
-  }
-
-  if (nettoInput) nettoInput.addEventListener('input', berechneFinanzen);
-  if (kontostandInput) kontostandInput.addEventListener('input', berechneFinanzen);
-  
-  if (datumInput) {
-    datumInput.addEventListener('change', () => {
-      localStorage.setItem(STORAGE_KEY_DATUM, datumInput.value);
-    });
-  }
-
-  berechneFinanzen();
-
-  // --- 2. VERTRAGSTABELLE MIT BEARBEITUNGSFUNKTION & STORAGE ---
   const tableBody = document.querySelector('#vertragstabelle tbody');
   const gesamtVertraegeEl = document.getElementById('gesamtVertraege');
   const sucheInput = document.getElementById('sucheVertrag');
@@ -97,6 +53,68 @@ function initApp() {
     localStorage.setItem(STORAGE_KEY_VERTRAEGE, JSON.stringify(vertragsDaten));
   }
 
+  function berechneFinanzen() {
+    let versicherungBedarfSumme = 0;
+    let glaeubigerKontoSumme = 0;
+
+    // Exakte Trennung nach Kategorien
+    vertragsDaten.forEach(v => {
+      const kat = (v.kategorie || '').toLowerCase();
+      if (kat.includes('versicherung')) {
+        versicherungBedarfSumme += v.monatlich;
+      } else if (kat.includes('gläubiger') || kat.includes('glaeubiger')) {
+        glaeubigerKontoSumme += v.monatlich;
+      }
+    });
+
+    // 1. Tatsächlicher Bedarf bei Versicherungen anzeigen
+    if (bedarfVersicherungenDisplay) {
+      bedarfVersicherungenDisplay.textContent = versicherungBedarfSumme.toLocaleString('de-DE', {minimumFractionDigits: 2, maximumFractionDigits: 2}) + ' €';
+    }
+
+    // 2. Gläubigerkonto rein aus Gläubiger-Positionen berechnen
+    if (fixGlaeubigerDisplay) {
+      fixGlaeubigerDisplay.textContent = glaeubigerKontoSumme.toLocaleString('de-DE', {minimumFractionDigits: 2, maximumFractionDigits: 2}) + ' €';
+    }
+
+    if (fixAutoDisplay) {
+      fixAutoDisplay.textContent = fixAutoWert.toLocaleString('de-DE') + ' €';
+    }
+
+    // 3. Gesamte Fixkosten (Auto + Versicherungen [starr 250 €] + Gläubigerkonto)
+    const fixkostenGesamt = fixAutoWert + fixVersicherungenStarr + glaeubigerKontoSumme;
+
+    if (gesamtFixkostenDisplay) {
+      gesamtFixkostenDisplay.textContent = 'Gesamt: ' + fixkostenGesamt.toLocaleString('de-DE', {minimumFractionDigits: 2, maximumFractionDigits: 2}) + ' €';
+    }
+
+    // 4. Verfügbares Netto berechnen
+    if (nettoInput && restDisplay) {
+      const netto = parseFloat(nettoInput.value) || 0;
+      const verfuegbar = netto - fixkostenGesamt;
+      restDisplay.textContent = verfuegbar.toLocaleString('de-DE', {minimumFractionDigits: 2, maximumFractionDigits: 2}) + ' €';
+      localStorage.setItem(STORAGE_KEY_NETTO, nettoInput.value);
+    }
+
+    // 5. Gläubigerkonto Puffer / Entnahme berechnen
+    if (kontostandInput && ueberschussDisplay && pufferStatusDisplay) {
+      const kontostand = parseFloat(kontostandInput.value) || 0;
+      const ueberschuss = kontostand - zielpuffer;
+      localStorage.setItem(STORAGE_KEY_KONTOSTAND, kontostandInput.value);
+
+      if (ueberschuss >= 0) {
+        ueberschussDisplay.textContent = ueberschuss.toLocaleString('de-DE', {minimumFractionDigits: 2, maximumFractionDigits: 2}) + ' €';
+        pufferStatusDisplay.className = 'green';
+        pufferStatusDisplay.textContent = '🟢 Du kannst ' + ueberschuss.toLocaleString('de-DE', {minimumFractionDigits: 2, maximumFractionDigits: 2}) + ' € entnehmen.';
+      } else {
+        const fehlbetrag = Math.abs(ueberschuss);
+        ueberschussDisplay.textContent = '-' + fehlbetrag.toLocaleString('de-DE', {minimumFractionDigits: 2, maximumFractionDigits: 2}) + ' €';
+        pufferStatusDisplay.className = 'red';
+        pufferStatusDisplay.textContent = '🔴 Es fehlen ' + fehlbetrag.toLocaleString('de-DE', {minimumFractionDigits: 2, maximumFractionDigits: 2}) + ' € zum Zielpuffer.';
+      }
+    }
+  }
+
   function initKategorienFilter() {
     if (!filterKategorie) return;
     const kategorien = [...new Set(vertragsDaten.map(v => v.kategorie))];
@@ -111,6 +129,9 @@ function initApp() {
 
   function renderVertraege() {
     if (!tableBody) return;
+
+    // Höchster monatlicher Betrag oben
+    vertragsDaten.sort((a, b) => b.monatlich - a.monatlich);
 
     const suche = sucheInput ? sucheInput.value.toLowerCase() : '';
     const katFilter = filterKategorie ? filterKategorie.value : '';
@@ -132,15 +153,9 @@ function initApp() {
 
       if (currentEditIndex === globalIndex) {
         tr.innerHTML = `
-          <td style="padding: 6px;">
-            <input type="text" id="editKat" value="${v.kategorie}" style="width: 100%; padding: 4px;">
-          </td>
-          <td style="padding: 6px;">
-            <input type="text" id="editName" value="${v.name}" style="width: 100%; padding: 4px;">
-          </td>
-          <td style="padding: 6px;" colspan="2">
-            Monatlich: <input type="number" step="0.01" id="editMonatlich" value="${v.monatlich}" style="width: 80px; padding: 4px;"> €
-          </td>
+          <td style="padding: 6px;"><input type="text" id="editKat" value="${v.kategorie}" style="width: 100%; padding: 4px;"></td>
+          <td style="padding: 6px;"><input type="text" id="editName" value="${v.name}" style="width: 100%; padding: 4px;"></td>
+          <td style="padding: 6px;" colspan="2">Monatlich: <input type="number" step="0.01" id="editMonatlich" value="${v.monatlich}" style="width: 80px; padding: 4px;"> €</td>
           <td style="padding: 6px; text-align: right;">
             <button onclick="speichereBearbeitung(${globalIndex})" style="background:none; border:none; cursor:pointer;">💾</button>
             <button onclick="abbrechenBearbeitung()" style="background:none; border:none; cursor:pointer;">❌</button>
@@ -164,18 +179,20 @@ function initApp() {
     if (gesamtVertraegeEl) {
       gesamtVertraegeEl.textContent = gesamtMonatlich.toLocaleString('de-DE', {minimumFractionDigits: 2, maximumFractionDigits: 2}) + ' €';
     }
+
+    berechneFinanzen();
   }
 
-  // Aktionen: Bearbeiten / Speichern / Abbrechen / Löschen
-  window.starteBearbeitung = function(index) {
-    currentEditIndex = index;
-    renderVertraege();
-  };
+  if (nettoInput) nettoInput.addEventListener('input', berechneFinanzen);
+  if (kontostandInput) kontostandInput.addEventListener('input', berechneFinanzen);
+  if (datumInput) {
+    datumInput.addEventListener('change', () => {
+      localStorage.setItem(STORAGE_KEY_DATUM, datumInput.value);
+    });
+  }
 
-  window.abbrechenBearbeitung = function() {
-    currentEditIndex = null;
-    renderVertraege();
-  };
+  window.starteBearbeitung = function(index) { currentEditIndex = index; renderVertraege(); };
+  window.abbrechenBearbeitung = function() { currentEditIndex = null; renderVertraege(); };
 
   window.speichereBearbeitung = function(index) {
     const neueKat = document.getElementById('editKat').value.trim();
@@ -205,7 +222,6 @@ function initApp() {
     renderVertraege();
   };
 
-  // Neuer Vertrag hinzufügen
   const btnSpeichern = document.getElementById('vertragSpeichern');
   if (btnSpeichern) {
     btnSpeichern.addEventListener('click', function() {

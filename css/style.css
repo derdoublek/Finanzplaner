@@ -42,10 +42,16 @@ header {
     font-size: 17px;
 }
 
+/* Standard große Zahlen (dunkel) */
 .big {
     font-size: 32px;
     font-weight: 700;
     color: #111827;
+}
+
+/* Kombinierte Klasse für grüne Beträge aus Bild 2 (z. B. Verfügbar) */
+.big.green {
+    color: #16a34a;
 }
 
 label {
@@ -97,6 +103,7 @@ tr:not(:last-child) {
     border-bottom: none;
 }
 
+/* Gesamtsummen-Box unten im Fixkosten-Block */
 .total {
     margin-top: 14px;
     background: #edf9f1;
@@ -107,8 +114,14 @@ tr:not(:last-child) {
     font-weight: 700;
 }
 
+/* Grüne Hervorhebung für Entnahme/Status */
 .green {
     color: #16a34a;
+    font-weight: 700;
+}
+
+.red {
+    color: #dc2626;
     font-weight: 700;
 }
 
