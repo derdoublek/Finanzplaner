@@ -1,4 +1,9 @@
 function initApp() {
+  // --- LOCALSTORAGE KEYS ---
+  const STORAGE_KEY_VERTRAEGE = 'family_finance_vertraege';
+  const STORAGE_KEY_NETTO = 'family_finance_netto';
+  const STORAGE_KEY_KONTOSTAND = 'family_finance_kontostand';
+
   // --- 1. BERECHNUNG EINKOMMEN & KONTOSTAND ---
   const nettoInput = document.getElementById('netto');
   const kontostandInput = document.getElementById('kontostand');
@@ -9,16 +14,26 @@ function initApp() {
   const fixkostenGesamt = 2305;
   const zielpuffer = 750;
 
+  // Werte aus localStorage laden, falls vorhanden
+  if (nettoInput && localStorage.getItem(STORAGE_KEY_NETTO) !== null) {
+    nettoInput.value = localStorage.getItem(STORAGE_KEY_NETTO);
+  }
+  if (kontostandInput && localStorage.getItem(STORAGE_KEY_KONTOSTAND) !== null) {
+    kontostandInput.value = localStorage.getItem(STORAGE_KEY_KONTOSTAND);
+  }
+
   function berechneFinanzen() {
     if (nettoInput && restDisplay) {
       const netto = parseFloat(nettoInput.value) || 0;
       const verfuegbar = netto - fixkostenGesamt;
       restDisplay.textContent = verfuegbar.toLocaleString('de-DE') + ' €';
+      localStorage.setItem(STORAGE_KEY_NETTO, nettoInput.value);
     }
 
     if (kontostandInput && ueberschussDisplay && pufferStatusDisplay) {
       const kontostand = parseFloat(kontostandInput.value) || 0;
       const ueberschuss = kontostand - zielpuffer;
+      localStorage.setItem(STORAGE_KEY_KONTOSTAND, kontostandInput.value);
 
       if (ueberschuss >= 0) {
         ueberschussDisplay.textContent = ueberschuss.toLocaleString('de-DE') + ' €';
@@ -37,14 +52,30 @@ function initApp() {
   if (kontostandInput) kontostandInput.addEventListener('input', berechneFinanzen);
   berechneFinanzen();
 
-  // --- 2. VERTRAGSTABELLE MIT BEARBEITUNGSFUNKTION ---
+  // --- 2. VERTRAGSTABELLE MIT BEARBEITUNGSFUNKTION & STORAGE ---
   const tableBody = document.querySelector('#vertragstabelle tbody');
   const gesamtVertraegeEl = document.getElementById('gesamtVertraege');
   const sucheInput = document.getElementById('sucheVertrag');
   const filterKategorie = document.getElementById('filterKategorie');
 
-  const vertragsDaten = (typeof vertraege !== 'undefined') ? vertraege : [];
+  // Verträge aus localStorage laden, sonst auf die globale Variable 'vertraege' zurückgreifen
+  let vertragsDaten = [];
+  const gespeicherteVertraege = localStorage.getItem(STORAGE_KEY_VERTRAEGE);
+  if (gespeicherteVertraege) {
+    try {
+      vertragsDaten = JSON.parse(gespeicherteVertraege);
+    } catch (e) {
+      vertragsDaten = (typeof vertraege !== 'undefined') ? vertraege : [];
+    }
+  } else {
+    vertragsDaten = (typeof vertraege !== 'undefined') ? vertraege : [];
+  }
+
   let currentEditIndex = null;
+
+  function speichereInLocalStorage() {
+    localStorage.setItem(STORAGE_KEY_VERTRAEGE, JSON.stringify(vertragsDaten));
+  }
 
   function initKategorienFilter() {
     if (!filterKategorie) return;
@@ -144,12 +175,14 @@ function initApp() {
     vertragsDaten[index].jaehrlich = neuerMonatsbetrag * 12;
 
     currentEditIndex = null;
+    speichereInLocalStorage();
     initKategorienFilter();
     renderVertraege();
   };
 
   window.loescheVertrag = function(index) {
     vertragsDaten.splice(index, 1);
+    speichereInLocalStorage();
     initKategorienFilter();
     renderVertraege();
   };
@@ -176,6 +209,7 @@ function initApp() {
       document.getElementById('vertragName').value = '';
       document.getElementById('vertragBetrag').value = '';
 
+      speichereInLocalStorage();
       initKategorienFilter();
       renderVertraege();
     });
