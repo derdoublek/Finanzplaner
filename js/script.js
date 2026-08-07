@@ -14,10 +14,12 @@ function initApp() {
   const fixAutoDisplay = document.getElementById('fixAuto');
   const bedarfVersicherungenDisplay = document.getElementById('bedarfVersicherungen');
   const fixGlaeubigerDisplay = document.getElementById('fixGlaeubiger');
+  const bedarfGlaeubigerDisplay = document.getElementById('bedarfGlaeubiger');
   const gesamtFixkostenDisplay = document.getElementById('gesamtFixkosten');
 
   const fixAutoWert = 350;
   const fixVersicherungenStarr = 250;
+  const fixGlaeubigerStarr = 1900; // Fester Betrag laut Einkommensverteiler
   const zielpuffer = 750;
 
   if (nettoInput && localStorage.getItem(STORAGE_KEY_NETTO) !== null) {
@@ -72,17 +74,20 @@ function initApp() {
       bedarfVersicherungenDisplay.textContent = versicherungBedarfSumme.toLocaleString('de-DE', {minimumFractionDigits: 2, maximumFractionDigits: 2}) + ' €';
     }
 
-    // 2. Gläubigerkonto rein aus Gläubiger-Positionen berechnen
+    // 2. Gläubigerkonto: Anzeigewert starr auf 1.900 €, tatsächlicher Bedarf darunter
     if (fixGlaeubigerDisplay) {
-      fixGlaeubigerDisplay.textContent = glaeubigerKontoSumme.toLocaleString('de-DE', {minimumFractionDigits: 2, maximumFractionDigits: 2}) + ' €';
+      fixGlaeubigerDisplay.textContent = fixGlaeubigerStarr.toLocaleString('de-DE') + ' €';
+    }
+    if (bedarfGlaeubigerDisplay) {
+      bedarfGlaeubigerDisplay.textContent = glaeubigerKontoSumme.toLocaleString('de-DE', {minimumFractionDigits: 2, maximumFractionDigits: 2}) + ' €';
     }
 
     if (fixAutoDisplay) {
       fixAutoDisplay.textContent = fixAutoWert.toLocaleString('de-DE') + ' €';
     }
 
-    // 3. Gesamte Fixkosten (Auto + Versicherungen [starr 250 €] + Gläubigerkonto)
-    const fixkostenGesamt = fixAutoWert + fixVersicherungenStarr + glaeubigerKontoSumme;
+    // 3. Gesamte Fixkosten (Auto [350 €] + Versicherungen [250 €] + Gläubigerkonto [1.900 €] = 2.500 €)
+    const fixkostenGesamt = fixAutoWert + fixVersicherungenStarr + fixGlaeubigerStarr;
 
     if (gesamtFixkostenDisplay) {
       gesamtFixkostenDisplay.textContent = 'Gesamt: ' + fixkostenGesamt.toLocaleString('de-DE', {minimumFractionDigits: 2, maximumFractionDigits: 2}) + ' €';
