@@ -1,224 +1,171 @@
-body {
-    margin: 0;
-    background: #f3f6fb;
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
-    color: #1f2937;
+:root {
+  --bg-color: #f4f6f8;
+  --card-bg: #ffffff;
+  --text-color: #1f2937;
+  --border-color: #e5e7eb;
+  --primary-color: #10b981;
+  --primary-hover: #059669;
+  --danger-color: #ef4444;
 }
 
-header {
-    background: #111827;
-    color: #fff;
-    padding: 18px 30px;
-    box-shadow: 0 4px 15px rgba(0, 0, 0, .12);
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+}
+
+body {
+  background-color: var(--bg-color);
+  color: var(--text-color);
+  padding: 24px;
 }
 
 .container {
-    max-width: 1100px;
-    margin: 20px auto;
-    padding: 0 16px;
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+header {
+  margin-bottom: 24px;
+}
+
+h1 {
+  font-size: 1.8rem;
+  font-weight: 700;
 }
 
 .grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-    gap: 18px;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 20px;
+  margin-bottom: 24px;
 }
 
 .card {
-    background: #fff;
-    border-radius: 16px;
-    padding: 20px;
-    box-shadow: 0 8px 24px rgba(15, 23, 42, .06);
-    transition: .25s;
+  background: var(--card-bg);
+  border-radius: 12px;
+  padding: 20px;
+  border: 1px solid var(--border-color);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
 }
 
-.card:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 12px 30px rgba(15, 23, 42, .1);
+.full-width {
+  grid-column: 1 / -1;
 }
 
 .card h2 {
-    margin: 0 0 16px;
-    font-size: 17px;
+  font-size: 1.2rem;
+  margin-bottom: 16px;
 }
 
-/* Standard große Zahlen (dunkel) */
-.big {
-    font-size: 32px;
-    font-weight: 700;
-    color: #111827;
+.form-group {
+  margin-bottom: 16px;
 }
 
-/* Kombinierte Klasse für grüne Beträge aus Bild 2 (z. B. Verfügbar) */
-.big.green {
-    color: #16a34a;
+.form-group label {
+  display: block;
+  font-size: 0.875rem;
+  color: #6b7280;
+  margin-bottom: 6px;
 }
 
-label {
-    font-size: 13px;
-    color: #6b7280;
-    font-weight: 600;
+.input-prefix {
+  display: flex;
+  align-items: center;
+  background: #f9fafb;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 8px 12px;
 }
 
-input,
-select {
-    width: 100%;
-    box-sizing: border-box;
-    background: #f8fbf9;
-    border: 1px solid #d8e7dd;
-    border-radius: 10px;
-    padding: 10px 12px;
-    font-size: 15px;
-    transition: .2s;
-    outline: none;
+.input-prefix input {
+  border: none;
+  background: transparent;
+  width: 100%;
+  font-size: 1.1rem;
+  outline: none;
+  font-weight: 600;
 }
 
-input:focus,
-select:focus {
-    border-color: #22c55e;
-    box-shadow: 0 0 0 3px rgba(34, 197, 94, .15);
-    background: #fff;
+.input-prefix span {
+  color: #6b7280;
+  font-weight: 600;
 }
 
+.result-box {
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border-color);
+}
+
+.result-box .label {
+  font-size: 0.85rem;
+  color: #6b7280;
+  display: block;
+  margin-bottom: 4px;
+}
+
+.result-box .big {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--primary-color);
+}
+
+/* Tabelle Styling */
 table {
-    width: 100%;
-    border-collapse: collapse;
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 16px;
+}
+
+th, td {
+  text-align: left;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--border-color);
 }
 
 th {
-    text-align: left;
-    padding: 10px 8px;
-    font-size: 12px;
-    text-transform: uppercase;
-    color: #6b7280;
+  font-size: 0.85rem;
+  color: #6b7280;
+  text-transform: uppercase;
 }
 
-td {
-    padding: 10px 8px;
-    border: none;
-    font-size: 14px;
+.add-form {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
 }
 
-tr:not(:last-child) {
-    border-bottom: none;
-}
-
-/* Gesamtsummen-Box unten im Fixkosten-Block */
-.total {
-    margin-top: 14px;
-    background: #edf9f1;
-    color: #15803d;
-    border-radius: 10px;
-    padding: 12px 14px;
-    font-size: 18px;
-    font-weight: 700;
-}
-
-/* Grüne Hervorhebung für Entnahme/Status */
-.green {
-    color: #16a34a;
-    font-weight: 700;
-}
-
-.red {
-    color: #dc2626;
-    font-weight: 700;
+.add-form input {
+  padding: 8px 12px;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  outline: none;
+  flex: 1;
+  min-width: 140px;
 }
 
 button {
-    background: #111827;
-    color: #fff;
-    border: none;
-    border-radius: 10px;
-    padding: 10px 16px;
-    font-size: 14px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: .2s;
+  background: var(--primary-color);
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 600;
 }
 
 button:hover {
-    background: #1f2937;
-    transform: translateY(-1px);
+  background: var(--primary-hover);
 }
 
-hr {
-    border: none;
-    height: 1px;
-    background: #eef2f7;
-    margin: 18px 0;
+.btn-delete {
+  background: transparent;
+  color: var(--danger-color);
+  padding: 4px 8px;
 }
 
-.header-logo {
-    display: flex;
-    align-items: center;
-    gap: 14px;
-}
-
-.header-logo img {
-    width: 48px;
-    height: 48px;
-    border-radius: 12px;
-    box-shadow: 0 6px 16px rgba(0, 0, 0, .2);
-}
-
-.header-text h1 {
-    margin: 0;
-    font-size: 28px;
-    font-weight: 700;
-}
-
-.header-text p {
-    margin: 4px 0 0;
-    font-size: 15px;
-    color: #d1d5db;
-}
-
-#sucheVertrag {
-    width: 100%;
-    margin: 12px 0;
-    padding: 10px 12px;
-    font-size: 14px;
-}
-
-/* Kompakte & minimalistische Icon-Buttons */
-.btn-icon {
-    background: transparent;
-    border: none;
-    padding: 4px;
-    border-radius: 6px;
-    cursor: pointer;
-    font-size: 13px;
-    line-height: 1;
-    opacity: 0.5;
-    transition: all 0.2s ease;
-}
-
-.btn-icon:hover {
-    background: #e5e7eb;
-    opacity: 1;
-    transform: scale(1.1);
-}
-
-@media(max-width:700px) {
-    header {
-        padding: 18px;
-    }
-
-    .header-logo {
-        flex-direction: column;
-        text-align: center;
-    }
-
-    .header-text h1 {
-        font-size: 22px;
-    }
-
-    .header-text p {
-        font-size: 14px;
-    }
-
-    .container {
-        padding: 0 10px;
-    }
+.btn-delete:hover {
+  background: #fee2e2;
 }
