@@ -1,71 +1,184 @@
 <!DOCTYPE html>
 <html lang="de">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Family Finance OS</title>
-  <link rel="stylesheet" href="style.css">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Finanzplaner Familie Kremer</title>
+<link rel="stylesheet" href="css/style.css">
 </head>
-<body>
-  <div class="container">
-    <header>
-      <h1>Family Finance OS</h1>
-    </header>
 
-    <div class="grid">
-      <!-- Einkommen Karte -->
-      <div class="card">
-        <h2>💰 Einkommen</h2>
-        <div class="form-group">
-          <label for="netto-einkommen">Monatliches Netto</label>
-          <div class="input-prefix">
-            <input type="number" id="netto-einkommen" step="0.01" placeholder="0">
-            <span>€</span>
-          </div>
+<body>
+
+<header>
+  <div class="header-logo">
+    <img src="img/logo.png" alt="Logo">
+    <div class="header-text">
+      <h1>Finanzplaner Familie Kremer</h1>
+      <p>Deine Familienfinanzen im Blick.</p>
+    </div>
+  </div>
+</header>
+
+<div class="container">
+
+  <div class="grid">
+
+    <!-- 1. EINKOMMEN -->
+    <div class="card">
+      <div>
+        <h2>💵 Einkommen</h2>
+        <label style="display:block;font-size:14px;color:#666;margin-bottom:6px;">Monatsnetto</label>
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:18px;">
+          <input id="netto" type="number" value="3500" style="padding:10px;font-size:24px;font-weight:bold;width:180px;">
+          <span style="font-size:24px;font-weight:bold;">€</span>
         </div>
       </div>
 
-      <!-- Gläubigerkonto Karte (Variante B: Minimalistisch) -->
-      <div class="card">
-        <h2>🏛️ Gläubigerkonto</h2>
-        <div class="form-group">
-          <label for="glaeubiger-stand">Aktueller Stand</label>
-          <div class="input-prefix">
-            <input type="number" id="glaeubiger-stand" step="0.01" placeholder="0">
-            <span>€</span>
-          </div>
-        </div>
-        <div class="result-box">
-          <span class="label">Benötigt für Gläubiger</span>
-          <div class="big" id="glaeubiger-bedarf">1.900,00 €</div>
+      <div style="margin-top: auto;">
+        <p style="margin-bottom:4px;">💰 Verfügbar</p>
+        <div class="big green" id="rest">1.000 €</div>
+      </div>
+    </div>
+
+    <!-- 2. FIXKOSTEN -->
+    <div class="card">
+      <div>
+        <h2>📊 Fixkosten</h2>
+        <p style="margin-top:-8px;color:#666;font-size:14px;margin-bottom:14px;">laut Einkommensverteiler</p>
+
+        <p>🚗 Auto <b style="float:right;" id="fixAuto">350 €</b></p>
+
+        <p>🛡 Versicherungen <b style="float:right;">250 €</b><br>
+          <span style="font-size:13px;color:#666;">
+            Tatsächlicher Bedarf: <b id="bedarfVersicherungen">170,93 €</b>
+          </span>
+        </p>
+
+        <p>🏠 Gläubigerkonto <b style="float:right;" id="fixGlaeubiger">1.900 €</b><br>
+          <span style="font-size:13px;color:#666;">
+            Tatsächlicher Bedarf: <b id="bedarfGlaeubiger">1.740,36 €</b>
+          </span>
+        </p>
+      </div>
+
+      <div style="margin-top: auto;">
+        <hr>
+        <div class="total" id="gesamtFixkosten">
+          Gesamt: 2.500 €
         </div>
       </div>
     </div>
 
-    <!-- Gläubiger-Tabelle / Positionen -->
-    <div class="card full-width">
-      <h2>📋 Gläubiger & Verpflichtungen</h2>
-      <table id="glaeubiger-tabelle">
-        <thead>
-          <tr>
-            <th>Name / Gläubiger</th>
-            <th>Rate / Betrag (€)</th>
-            <th>Aktion</th>
-          </tr>
-        </thead>
-        <tbody id="glaeubiger-liste">
-          <!-- Dynamisch per JS befüllt -->
-        </tbody>
-      </table>
-      
-      <div class="add-form">
-        <input type="text" id="neuer-name" placeholder="Name des Gläubigers">
-        <input type="number" id="neuer-betrag" step="0.01" placeholder="Betrag (€)">
-        <button id="btn-hinzufuegen">Hinzufügen</button>
+    <!-- 3. GLÄUBIGERKONTO -->
+    <div class="card">
+      <div>
+        <h2>🏦 Gläubigerkonto</h2>
+
+        <label style="font-size:14px;color:#666;">Stand vom</label><br>
+        <input type="date" style="padding:8px;margin:6px 0 14px;width:180px;"><br>
+
+        <label style="display:block;margin:6px 0 6px;font-size:14px;color:#666;">
+          Tagesaktueller Kontostand
+        </label>
+
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px;">
+          <input id="kontostand" type="number" value="839" style="padding:10px;font-size:22px;width:180px;font-weight:bold;">
+          <span style="font-size:22px;font-weight:bold;">€</span>
+        </div>
       </div>
+
+      <div style="margin-top: auto;">
+        <p style="margin-bottom:8px;">Zielpuffer <b>750 €</b></p>
+
+        <div style="display:flex;justify-content:space-between;margin:8px 0;">
+          <span>Überschuss</span>
+          <b id="ueberschuss">89 €</b>
+        </div>
+
+        <p id="pufferStatus" class="green" style="margin-bottom:0;">
+          🟢 Du kannst 89 € entnehmen.
+        </p>
+      </div>
+    </div>
+
+  </div>
+
+  <br><br>
+
+  <!-- VERTRAGSVERWALTUNG (Standardmäßig zugeklappt) -->
+  <div class="grid">
+    <div class="card" style="width:100%;">
+      <details>
+        <summary style="cursor: pointer; font-size: 20px; font-weight: bold; user-select: none;">
+          🏦 Vertragsverwaltung Gläubigerkonto
+        </summary>
+
+        <div style="margin-top: 18px;">
+          <div style="display: flex; gap: 10px; margin: 12px 0;">
+            <input id="sucheVertrag" type="text" placeholder="🔍 Vertrag suchen..." style="flex: 1;">
+            <select id="filterKategorie" style="width: auto; min-width: 160px;">
+              <option value="">Alle Kategorien</option>
+            </select>
+          </div>
+
+          <table id="vertragstabelle">
+            <thead>
+              <tr>
+                <th>Kategorie</th>
+                <th>Vertrag</th>
+                <th>Jahr</th>
+                <th>Monat</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+
+          <hr>
+
+          <div class="total">
+            Monatlicher Bedarf: <span id="gesamtVertraege">0 €</span>
+          </div>
+
+          <hr>
+
+          <details>
+            <summary style="cursor: pointer; font-size: 18px; font-weight: bold; user-select: none; margin: 10px 0;">
+              ➕ Neuer Vertrag hinzufügen
+            </summary>
+
+            <div style="margin-top: 15px;">
+              <input id="vertragName" type="text" placeholder="Vertragsname" style="width:100%;padding:10px;"><br><br>
+              <input id="vertragBetrag" type="number" placeholder="Betrag" style="width:220px;padding:10px;">
+              <span style="font-size:20px;font-weight:bold;">€</span><br><br>
+
+              <select id="vertragRhythmus" style="padding:10px;">
+                <option value="1">Monatlich</option>
+                <option value="3">Vierteljährlich</option>
+                <option value="6">Halbjährlich</option>
+                <option value="12">Jährlich</option>
+              </select><br><br>
+
+              <select id="vertragKategorie" style="padding:10px;">
+                <option value="Auto">Auto</option>
+                <option value="Wohnen">Wohnen</option>
+                <option value="Versicherung">Versicherung</option>
+                <option value="Gläubiger">Gläubiger</option>
+                <option value="Sonstiges">Sonstiges</option>
+              </select><br><br>
+
+              <button id="vertragSpeichern">➕ Vertrag hinzufügen</button>
+            </div>
+          </details>
+        </div>
+      </details>
     </div>
   </div>
 
-  <script src="script.js"></script>
+</div>
+
+<script src="js/daten.js?v=1.1"></script>
+<script src="js/script.js?v=1.0"></script>
+
 </body>
 </html>
