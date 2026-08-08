@@ -82,7 +82,8 @@ function initApp() {
         abgebucht: gespeichert.abgebucht !== undefined ? gespeichert.abgebucht : false,
         abgebuchtDatum: gespeichert.abgebuchtDatum || null,
         rhythmus: gespeichert.rhythmus !== undefined ? gespeichert.rhythmus : (basisV.rhythmus || 1),
-        eingabeBetrag: gespeichert.eingabeBetrag !== undefined ? gespeichert.eingabeBetrag : (basisV.monatlich * (basisV.rhythmus || 1))
+        eingabeBetrag: gespeichert.eingabeBetrag !== undefined ? gespeichert.eingabeBetrag : (basisV.monatlich * (basisV.rhythmus || 1)),
+        aktuelleRate: gespeichert.aktuelleRate !== undefined ? gespeichert.aktuelleRate : 1
       };
     } else {
       return {
@@ -90,7 +91,8 @@ function initApp() {
         abgebucht: false,
         abgebuchtDatum: null,
         rhythmus: basisV.rhythmus || 1,
-        eingabeBetrag: basisV.monatlich * (basisV.rhythmus || 1)
+        eingabeBetrag: basisV.monatlich * (basisV.rhythmus || 1),
+        aktuelleRate: 1
       };
     }
   });
@@ -104,6 +106,9 @@ function initApp() {
           if (storedV.eingabeBetrag === undefined) {
             storedV.eingabeBetrag = storedV.monatlich * (storedV.rhythmus || 1);
           }
+          if (storedV.aktuelleRate === undefined) {
+            storedV.aktuelleRate = 1;
+          }
           vertragsDaten.push(storedV);
         }
       });
@@ -116,11 +121,23 @@ function initApp() {
     localStorage.setItem(STORAGE_KEY_VERTRAEGE, JSON.stringify(vertragsDaten));
   }
 
-  function getRhythmusText(rhythmus) {
-    if (rhythmus === 1) return 'Monatlich';
-    if (rhythmus === 3) return 'Vierteljährlich';
-    if (rhythmus === 6) return 'Halbjährlich';
-    if (rhythmus === 12) return 'Jährlich';
+  function getMaxRaten(rhythmus) {
+    if (rhythmus === 3) return 4;
+    if (rhythmus === 6) return 2;
+    if (rhythmus === 12) return 1;
+    return 1;
+  }
+
+  function getRhythmusText(v) {
+    const r = v.rhythmus || 1;
+    if (r === 1) return 'Monatlich';
+    
+    const maxRaten = getMaxRaten(r);
+    const rate = v.aktuelleRate || 1;
+    
+    if (r === 3) return `Vierteljährlich (${rate}/${maxRaten})`;
+    if (r === 6) return `Halbjährlich (${rate}/${maxRaten})`;
+    if (r === 12) return `Jährlich (${rate}/${maxRaten})`;
     return 'Monatlich';
   }
 
@@ -207,6 +224,77 @@ function initApp() {
       option.value = kat;
       option.textContent = kat;
       filterKategorie.appendChild(option);
+    });
+  }
+
+  function initSchnellAbbuchungDropdown() {
+    const selectEl = document.getElementById('schnellAbbuchungSelect');
+    if (!selectEl) return;
+
+    // Nur Verträge anzeigen, die in diesem Monat noch nicht abgebucht sind
+    const offeneVertraege = vertragsDaten.filter(v => !v.abgebucht);
+    const sortierteVertraege = [...offeneVertraege].sort((a, b) => a.name.localeCompare(b.name, 'de'));
+
+    selectEl.innerHTML = '';
+
+    if (sortierteVertraege.length === 0) {
+      const option = document.createElement('option');
+      option.value = "";
+      option.textContent = "Alle Verträge für diesen Monat bereits abgehakt! 🎉";
+      selectEl.appendChild(option);
+      return;
+    }
+
+    sortierteVertraege.forEach(v => {
+      const realIndex = vertragsDaten.findIndex(item => item.name === v.name);
+      const anzeigeEingabeBetrag = v.eingabeBetrag !== undefined ? v.eingabeBetrag : (v.monatlich * (v.rhythmus || 1));
+      const option = document.createElement('option');
+      option.value = realIndex;
+      option.textContent = `${v.name} (${anzeigeEingabeBetrag.toLocaleString('de-DE', {minimumFractionDigits: 2, maximumFractionDigits: 2})} € - ${getRhythmusText(v)})`;
+      selectEl.appendChild(option);
+    });
+  }
+
+  const schnellDatumInput = document.getElementById('schnellDatumInput');
+  if (schnellDatumInput) {
+    schnellDatumInput.value = new Date().toISOString().split('T')[0];
+  }
+
+  const btnSchnellSpeichern = document.getElementById('btnSchnellAbbuchungSpeichern');
+  if (btnSchnellSpeichern) {
+    btnSchnellSpeichern.addEventListener('click', () => {
+      const selectEl = document.getElementById('schnellAbbuchungSelect');
+      const datumInput = document.getElementById('schnellDatumInput');
+      if (!selectEl || selectEl.value === "") return;
+
+      const index = parseInt(selectEl.value);
+      const gewaehltesDatum = datumInput.value;
+
+      if (!isNaN(index) && gewaehltesDatum) {
+        const dateParts = gewaehltesDatum.split('-');
+        let formatiertesDatum = gewaehltesDatum;
+        if (dateParts.length === 3) {
+          formatiertesDatum = `${dateParts[2]}.${dateParts[1]}.${dateParts[0]}`;
+        }
+
+        vertragsDaten[index].abgebucht = true;
+        vertragsDaten[index].abgebuchtDatum = formatiertesDatum;
+
+        // Raten-Zähler erhöhen bei Nicht-Monatszahlern
+        const r = vertragsDaten[index].rhythmus || 1;
+        if (r > 1) {
+          const maxR = getMaxRaten(r);
+          if (vertragsDaten[index].aktuelleRate < maxR) {
+            vertragsDaten[index].aktuelleRate += 1;
+          }
+        }
+
+        speichereInLocalStorage();
+        renderVertraege();
+
+        const abbuchungModal = document.getElementById('abbuchungModal');
+        if (abbuchungModal) abbuchungModal.close();
+      }
     });
   }
 
@@ -304,7 +392,7 @@ function initApp() {
         `;
       } else {
         const datumAnzeige = v.abgebuchtDatum ? `<br><small style="color: #6b7280; font-weight: normal;">Abgebucht am: ${v.abgebuchtDatum}</small>` : '';
-        const rhythmusLabel = getRhythmusText(v.rhythmus || 1);
+        const rhythmusLabel = getRhythmusText(v);
         const anzeigeEingabeBetrag = v.eingabeBetrag !== undefined ? v.eingabeBetrag : (v.monatlich * (v.rhythmus || 1));
         const originalBetragStr = anzeigeEingabeBetrag.toLocaleString('de-DE', {minimumFractionDigits: 2, maximumFractionDigits: 2});
 
@@ -336,6 +424,7 @@ function initApp() {
     }
 
     berechneFinanzen();
+    initSchnellAbbuchungDropdown();
   }
 
   window.toggleAbgebucht = function(index, checkboxEl) {
@@ -395,6 +484,14 @@ function initApp() {
           }
           vertragsDaten[index].abgebucht = true;
           vertragsDaten[index].abgebuchtDatum = formatiertesDatum;
+
+          const r = vertragsDaten[index].rhythmus || 1;
+          if (r > 1) {
+            const maxR = getMaxRaten(r);
+            if (vertragsDaten[index].aktuelleRate < maxR) {
+              vertragsDaten[index].aktuelleRate += 1;
+            }
+          }
         } else {
           checkboxEl.checked = false;
         }
@@ -413,6 +510,11 @@ function initApp() {
     } else {
       vertragsDaten[index].abgebucht = false;
       vertragsDaten[index].abgebuchtDatum = null;
+      // Rate wieder einen Schritt zurücknehmen, wenn man den Haken entfernt
+      const r = vertragsDaten[index].rhythmus || 1;
+      if (r > 1 && vertragsDaten[index].aktuelleRate > 1) {
+        vertragsDaten[index].aktuelleRate -= 1;
+      }
       speichereInLocalStorage();
       renderVertraege();
     }
@@ -452,6 +554,7 @@ function initApp() {
         vertragsDaten.forEach(v => {
           v.abgebucht = false;
           v.abgebuchtDatum = null;
+          // Hinweis: Die aktuelleRate läuft über das Jahr weiter, bis alle Raten durch sind oder das Jahr um ist.
         });
 
         speichereInLocalStorage();
@@ -537,7 +640,8 @@ function initApp() {
         rhythmus, 
         eingabeBetrag: betrag, 
         abgebucht: false, 
-        abgebuchtDatum: null 
+        abgebuchtDatum: null,
+        aktuelleRate: 1
       });
 
       nameInput.value = '';
@@ -559,6 +663,7 @@ function initApp() {
   initKategorienFilter();
   renderVertraege();
   renderHistorie();
+  initSchnellAbbuchungDropdown();
 }
 
 if (document.readyState === 'loading') {

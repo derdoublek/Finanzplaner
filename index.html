@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Finanzplaner Familie Kremer</title>
-<link rel="stylesheet" href="css/style.css?v=2.5">
+<link rel="stylesheet" href="css/style.css?v=2.8">
 </head>
 
 <body>
@@ -65,7 +65,6 @@
       </div>
 
       <div class="card-footer">
-        <hr>
         <div class="total" id="gesamtFixkosten">
           Gesamt: 2.500,00 €
         </div>
@@ -114,9 +113,14 @@
       <details open>
         <summary>
           <span>🏦 Vertragsverwaltung & Kontoabgleich (Zyklus 15. bis 15.)</span>
-          <button type="button" class="btn-add" onclick="document.getElementById('addModal').showModal(); event.preventDefault();">
-            ➕ Neuer Vertrag
-          </button>
+          <div style="display: flex; gap: 10px;">
+            <button type="button" class="btn-add" onclick="document.getElementById('abbuchungModal').showModal(); event.preventDefault();" style="background-color: #0284c7;">
+              ⚡ Buchung hinzufügen
+            </button>
+            <button type="button" class="btn-add" onclick="document.getElementById('addModal').showModal(); event.preventDefault();">
+              ➕ Neuer Vertrag
+            </button>
+          </div>
         </summary>
 
         <div class="details-content">
@@ -198,6 +202,29 @@
 
 </div>
 
+<!-- MODAL / POPUP FÜR SCHNELLE ABBUCHUNG -->
+<dialog id="abbuchungModal" class="modal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h3>⚡ Abbuchung eintragen</h3>
+      <button type="button" class="btn-close" onclick="document.getElementById('abbuchungModal').close()">✕</button>
+    </div>
+    
+    <div class="form-add">
+      <label>Vertrag auswählen (alphabetisch)</label>
+      <select id="schnellAbbuchungSelect" style="width: 100%; padding: 10px 12px; margin-bottom: 12px;"></select>
+
+      <label>Abbuchungsdatum</label>
+      <input type="date" id="schnellDatumInput" style="width: 100%; padding: 10px 12px; margin-bottom: 20px;">
+
+      <div style="display: flex; justify-content: flex-end; gap: 10px;">
+        <button type="button" onclick="document.getElementById('abbuchungModal').close()" class="btn-secondary">Abbrechen</button>
+        <button type="button" id="btnSchnellAbbuchungSpeichern" class="btn-add">Speichern & Abhaken</button>
+      </div>
+    </div>
+  </div>
+</dialog>
+
 <!-- MODAL / POPUP FÜR NEUEN VERTRAG -->
 <dialog id="addModal" class="modal">
   <div class="modal-content">
@@ -208,16 +235,16 @@
     
     <div class="form-add">
       <label>Vertragsname</label>
-      <input id="vertragName" type="text" placeholder="z. B. Netflix, Versicherung...">
+      <input id="vertragName" type="text" placeholder="z. B. Netflix, Versicherung..." style="margin-bottom: 12px;">
       
       <label>Betrag</label>
-      <div class="input-prefix">
+      <div class="input-prefix" style="margin-bottom: 12px;">
         <input id="vertragBetrag" type="number" placeholder="0">
         <span>€</span>
       </div>
 
       <label>Zahlungsrhythmus</label>
-      <select id="vertragRhythmus">
+      <select id="vertragRhythmus" style="margin-bottom: 12px;">
         <option value="1">Monatlich</option>
         <option value="3">Vierteljährlich</option>
         <option value="6">Halbjährlich</option>
@@ -225,19 +252,22 @@
       </select>
 
       <label>Kategorie</label>
-      <select id="vertragKategorie">
+      <select id="vertragKategorie" style="margin-bottom: 20px;">
         <option value="Auto">Auto</option>
         <option value="Versicherung">Versicherung</option>
         <option value="Gläubiger">Gläubiger</option>
       </select>
 
-      <button id="vertragSpeichern">Speichern</button>
+      <div style="display: flex; justify-content: flex-end; gap: 10px;">
+        <button type="button" onclick="document.getElementById('addModal').close()" class="btn-secondary">Abbrechen</button>
+        <button id="vertragSpeichern" class="btn-add">Speichern</button>
+      </div>
     </div>
   </div>
 </dialog>
 
-<script src="js/daten.js?v=2.5"></script>
-<script src="js/script.js?v=2.5"></script>
+<script src="js/daten.js?v=2.8"></script>
+<script src="js/script.js?v=2.8"></script>
 
 </body>
 </html>
