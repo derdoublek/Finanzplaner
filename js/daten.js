@@ -28,6 +28,6 @@ const vertraege = [
     { kategorie: "Versicherungen", name: "Tierhalter", jaehrlich: 62, monatlich: 5.17 },
     { kategorie: "Gläubiger", name: "Soldaten", jaehrlich: 27, monatlich: 2.25 },
     { kategorie: "Versicherungen", name: "Auslandsreise", jaehrlich: 21, monatlich: 1.75 },
-    { kategorie: "Gläubiger", name: "On That Ass", jaehrlich: 156, monatlich: 13.00 },
-    { kategorie: "Gläubiger", name: "ChatGPT", jaehrlich: 96, monatlich: 8.00 }
+    { kategorie: "Gläubiger", name: "Disney+", jaehrlich: 96, monatlich: 8.00 },
+    { kategorie: "Gläubiger", name: "Kai Handy (mobilcom-debitel)", jaehrlich: 444, monatlich: 37.00 }
 ];

@@ -58,19 +58,53 @@ function initApp() {
   const sucheInput = document.getElementById('sucheVertrag');
   const filterKategorie = document.getElementById('filterKategorie');
 
+  // Daten abgleichen: Basis aus daten.js laden und mit gespeichertem Status (abgebucht) abgleichen
+  let basisVertraege = (typeof vertraege !== 'undefined') ? vertraege : [];
   let vertragsDaten = [];
+  
   const gespeicherteVertraege = localStorage.getItem(STORAGE_KEY_VERTRAEGE);
+  let gespeicherteMap = new Map();
+  
   if (gespeicherteVertraege) {
     try {
-      vertragsDaten = JSON.parse(gespeicherteVertraege);
-      vertragsDaten.forEach(v => {
-        if (v.abgebucht === undefined) v.abgebucht = false;
+      const parsedStored = JSON.parse(gespeicherteVertraege);
+      parsedStored.forEach(v => {
+        gespeicherteMap.set(v.name, v);
       });
     } catch (e) {
-      vertragsDaten = (typeof vertraege !== 'undefined') ? vertraege : [];
+      // Fallback
     }
-  } else {
-    vertragsDaten = (typeof vertraege !== 'undefined') ? vertraege : [];
+  }
+
+  // Abgleich: Nimm die Verträge aus der daten.js und behalte den Abgebucht-Status oder manuelle Anpassungen bei
+  vertragsDaten = basisVertraege.map(basisV => {
+    const gespeichert = gespeicherteMap.get(basisV.name);
+    if (gespeichert) {
+      return {
+        ...basisV,
+        abgebucht: gespeichert.abgebucht !== undefined ? gespeichert.abgebucht : false,
+        abgebuchtDatum: gespeichert.abgebuchtDatum || null
+      };
+    } else {
+      return {
+        ...basisV,
+        abgebucht: false,
+        abgebuchtDatum: null
+      };
+    }
+  });
+
+  // Falls manuell hinzugefügte Verträge im LocalStorage existieren, die nicht in daten.js stehen, behalten wir sie bei
+  if (gespeicherteVertraege) {
+    try {
+      const parsedStored = JSON.parse(gespeicherteVertraege);
+      parsedStored.forEach(storedV => {
+        const existsInBasis = basisVertraege.some(b => b.name === storedV.name);
+        if (!existsInBasis) {
+          vertragsDaten.push(storedV);
+        }
+      });
+    } catch (e) {}
   }
 
   let currentEditIndex = null;
@@ -168,7 +202,13 @@ function initApp() {
   function renderVertraege() {
     if (!tableBody) return;
 
-    vertragsDaten.sort((a, b) => b.monatlich - a.monatlich);
+    // Sortierung: 1. Nicht abgebucht oben, 2. Abgebucht unten, innerhalb nach Betrag absteigend
+    vertragsDaten.sort((a, b) => {
+      if (a.abgebucht !== b.abgebucht) {
+        return a.abgebucht ? 1 : -1;
+      }
+      return b.monatlich - a.monatlich;
+    });
 
     const suche = sucheInput ? sucheInput.value.toLowerCase() : '';
     const katFilter = filterKategorie ? filterKategorie.value : '';
@@ -211,17 +251,18 @@ function initApp() {
           </td>
         `;
       } else {
+        const datumAnzeige = v.abgebuchtDatum ? `<br><small style="color: #6b7280; font-weight: normal;">Abgebucht am: ${v.abgebuchtDatum}</small>` : '';
         tr.innerHTML = `
           <td style="text-align: center; padding: 10px;">
-            <input type="checkbox" class="check-abgebucht" ${v.abgebucht ? 'checked' : ''} onchange="toggleAbgebucht(${globalIndex})">
+            <input type="checkbox" class="check-abgebucht" ${v.abgebucht ? 'checked' : ''} onchange="toggleAbgebucht(${globalIndex}, this)">
           </td>
           <td style="padding: 10px;"><b>${v.kategorie}</b></td>
-          <td style="padding: 10px;">${v.name}</td>
+          <td style="padding: 10px;">${v.name}${datumAnzeige}</td>
           <td style="padding: 10px;">${v.jaehrlich.toLocaleString('de-DE', {minimumFractionDigits: 2, maximumFractionDigits: 2})} €</td>
           <td style="padding: 10px; font-weight: bold;">${v.monatlich.toLocaleString('de-DE', {minimumFractionDigits: 2, maximumFractionDigits: 2})} €</td>
           <td style="padding: 10px; text-align: right; white-space: nowrap;">
-            <button onclick="starteBearbeitung(${globalIndex})" style="background:none; border:none; cursor:pointer; margin-right: 4px;" title="Bearbeiten">✏️</button>
-            <button onclick="loescheVertrag(${globalIndex})" style="background:none; border:none; cursor:pointer; color:#dc3545;" title="Löschen">🗑️</button>
+            <button onclick="loescheVertrag(${globalIndex})" style="background:none; border:none; cursor:pointer; color:#dc3545; margin-right: 6px;" title="Löschen">🗑️</button>
+            <button onclick="starteBearbeitung(${globalIndex})" style="background:none; border:none; cursor:pointer;" title="Bearbeiten">✏️</button>
           </td>
         `;
       }
@@ -241,8 +282,35 @@ function initApp() {
     berechneFinanzen();
   }
 
-  window.toggleAbgebucht = function(index) {
-    vertragsDaten[index].abgebucht = !vertragsDaten[index].abgebucht;
+  window.toggleAbgebucht = function(index, checkboxEl) {
+    const istAbgebucht = checkboxEl.checked;
+    
+    if (istAbgebucht) {
+      // Datum abfragen mit Standardwert heute (YYYY-MM-DD umwandeln für deutsches Format)
+      const heuteISO = new Date().toISOString().split('T')[0];
+      const gewaehltesDatum = prompt("An welchem Datum wurde dieser Betrag abgebucht?", heuteISO);
+      
+      if (gewaehltesDatum) {
+        // Datum formatiern von YYYY-MM-DD zu DD.MM.YYYY
+        constteile = gewaehltesDatum.split('-');
+        let formatiertesDatum = gewaehltesDatum;
+        if (componet = part = dateParts = gewaehltesDatum.split('-')) {
+          if (dateParts.length === 3) {
+            formatiertesDatum = `${dateParts[2]}.${dateParts[1]}.${dateParts[0]}`;
+          }
+        }
+        vertragsDaten[index].abgebucht = true;
+        vertragsDaten[index].abgebuchtDatum = formatiertesDatum;
+      } else {
+        // Wenn abgebrochen wird, Checkbox zurücksetzen
+        checkboxEl.checked = false;
+        return;
+      }
+    } else {
+      vertragsDaten[index].abgebucht = false;
+      vertragsDaten[index].abgebuchtDatum = null;
+    }
+
     speichereInLocalStorage();
     renderVertraege();
   };
@@ -250,7 +318,10 @@ function initApp() {
   if (btnResetAbgebucht) {
     btnResetAbgebucht.addEventListener('click', () => {
       if (confirm('Möchtest du alle Haken für den neuen Abrechnungszeitraum (15. bis 15.) zurücksetzen?')) {
-        vertragsDaten.forEach(v => v.abgebucht = false);
+        vertragsDaten.forEach(v => {
+          v.abgebucht = false;
+          v.abgebuchtDatum = null;
+        });
         speichereInLocalStorage();
         renderVertraege();
       }
@@ -319,7 +390,7 @@ function initApp() {
       const monatlich = (betrag * (12 / rhythmus)) / 12;
       const jaehrlich = monatlich * 12;
 
-      vertragsDaten.push({ kategorie, name, jaehrlich, monatlich, abgebucht: false });
+      vertragsDaten.push({ kategorie, name, jaehrlich, monatlich, abgebucht: false, abgebuchtDatum: null });
 
       nameInput.value = '';
       betragInput.value = '';
