@@ -81,14 +81,16 @@ function initApp() {
         ...basisV,
         abgebucht: gespeichert.abgebucht !== undefined ? gespeichert.abgebucht : false,
         abgebuchtDatum: gespeichert.abgebuchtDatum || null,
-        rhythmus: gespeichert.rhythmus !== undefined ? gespeichert.rhythmus : (basisV.rhythmus || 1)
+        rhythmus: gespeichert.rhythmus !== undefined ? gespeichert.rhythmus : (basisV.rhythmus || 1),
+        eingabeBetrag: gespeichert.eingabeBetrag !== undefined ? gespeichert.eingabeBetrag : (basisV.monatlich * (basisV.rhythmus || 1))
       };
     } else {
       return {
         ...basisV,
         abgebucht: false,
         abgebuchtDatum: null,
-        rhythmus: basisV.rhythmus || 1
+        rhythmus: basisV.rhythmus || 1,
+        eingabeBetrag: basisV.monatlich * (basisV.rhythmus || 1)
       };
     }
   });
@@ -99,6 +101,9 @@ function initApp() {
       parsedStored.forEach(storedV => {
         const existsInBasis = basisVertraege.some(b => b.name === storedV.name);
         if (!existsInBasis) {
+          if (storedV.eingabeBetrag === undefined) {
+            storedV.eingabeBetrag = storedV.monatlich * (storedV.rhythmus || 1);
+          }
           vertragsDaten.push(storedV);
         }
       });
@@ -282,8 +287,8 @@ function initApp() {
           <td></td>
           <td style="padding: 6px;"><input type="text" id="editKat" value="${v.kategorie}" style="width: 100%; padding: 4px;"></td>
           <td style="padding: 6px;"><input type="text" id="editName" value="${v.name}" style="width: 100%; padding: 4px;"></td>
-          <td style="padding: 6px;" colspan="2">
-            Betrag: <input type="number" step="0.01" id="editBetrag" value="${(v.monatlich * v.rhythmus).toFixed(2)}" style="width: 90px; padding: 4px;"><br>
+          <td style="padding: 6px;">
+            Betrag: <input type="number" step="0.01" id="editBetrag" value="${v.eingabeBetrag !== undefined ? v.eingabeBetrag.toFixed(2) : (v.monatlich * v.rhythmus).toFixed(2)}" style="width: 90px; padding: 4px;"><br>
             Rhythmus: <select id="editRhythmus" style="width: 110px; padding: 4px; margin-top: 4px;">
               <option value="1" ${v.rhythmus === 1 ? 'selected' : ''}>Monatlich</option>
               <option value="3" ${v.rhythmus === 3 ? 'selected' : ''}>Vierteljährlich</option>
@@ -291,6 +296,7 @@ function initApp() {
               <option value="12" ${v.rhythmus === 12 ? 'selected' : ''}>Jährlich</option>
             </select>
           </td>
+          <td style="padding: 6px;"><b>${v.monatlich.toFixed(2)} € / mtl.</b></td>
           <td style="padding: 6px; text-align: right;">
             <button onclick="speichereBearbeitung(${globalIndex})" style="background:none; border:none; cursor:pointer;" title="Speichern">💾</button>
             <button onclick="abbrechenBearbeitung()" style="background:none; border:none; cursor:pointer;" title="Abbrechen">❌</button>
@@ -299,7 +305,8 @@ function initApp() {
       } else {
         const datumAnzeige = v.abgebuchtDatum ? `<br><small style="color: #6b7280; font-weight: normal;">Abgebucht am: ${v.abgebuchtDatum}</small>` : '';
         const rhythmusLabel = getRhythmusText(v.rhythmus || 1);
-        const originalBetrag = (v.monatlich * (v.rhythmus || 1)).toLocaleString('de-DE', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+        const anzeigeEingabeBetrag = v.eingabeBetrag !== undefined ? v.eingabeBetrag : (v.monatlich * (v.rhythmus || 1));
+        const originalBetragStr = anzeigeEingabeBetrag.toLocaleString('de-DE', {minimumFractionDigits: 2, maximumFractionDigits: 2});
 
         tr.innerHTML = `
           <td style="text-align: center; padding: 10px;">
@@ -307,7 +314,7 @@ function initApp() {
           </td>
           <td style="padding: 10px;"><b>${v.kategorie}</b></td>
           <td style="padding: 10px;">${v.name}${datumAnzeige}</td>
-          <td style="padding: 10px;">${originalBetrag} €</td>
+          <td style="padding: 10px;">${originalBetragStr} €</td>
           <td style="padding: 10px; font-weight: bold;">${v.monatlich.toLocaleString('de-DE', {minimumFractionDigits: 2, maximumFractionDigits: 2})} € <br><small style="color: #6b7280;">(${rhythmusLabel})</small></td>
           <td style="padding: 10px; text-align: right; white-space: nowrap;">
             <button onclick="loescheVertrag(${globalIndex})" style="background:none; border:none; cursor:pointer; color:#dc3545; margin-right: 6px;" title="Löschen">🗑️</button>
@@ -482,6 +489,7 @@ function initApp() {
     vertragsDaten[index].kategorie = neueKat;
     vertragsDaten[index].name = neuerName;
     vertragsDaten[index].rhythmus = neuerRhythmus;
+    vertragsDaten[index].eingabeBetrag = eingegebenerBetrag;
     vertragsDaten[index].monatlich = monatlich;
     vertragsDaten[index].jaehrlich = jaehrlich;
 
@@ -521,7 +529,16 @@ function initApp() {
       const monatlich = (betrag * (12 / rhythmus)) / 12;
       const jaehrlich = monatlich * 12;
 
-      vertragsDaten.push({ kategorie, name, jaehrlich, monatlich, rhythmus, abgebucht: false, abgebuchtDatum: null });
+      vertragsDaten.push({ 
+        kategorie, 
+        name, 
+        jaehrlich, 
+        monatlich, 
+        rhythmus, 
+        eingabeBetrag: betrag, 
+        abgebucht: false, 
+        abgebuchtDatum: null 
+      });
 
       nameInput.value = '';
       betragInput.value = '';
