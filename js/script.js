@@ -3,6 +3,7 @@ function initApp() {
   const STORAGE_KEY_NETTO = 'family_finance_netto';
   const STORAGE_KEY_KONTOSTAND = 'family_finance_kontostand';
   const STORAGE_KEY_DATUM = 'family_finance_datum';
+  const STORAGE_KEY_HISTORIE = 'family_finance_historie';
 
   const nettoInput = document.getElementById('netto');
   const kontostandInput = document.getElementById('kontostand');
@@ -204,6 +205,37 @@ function initApp() {
     });
   }
 
+  function renderHistorie() {
+    const historieTbody = document.querySelector('#historieTabelle tbody');
+    if (!historieTbody) return;
+
+    let historieEintraege = [];
+    try {
+      const gespeicherteHistorie = localStorage.getItem(STORAGE_KEY_HISTORIE);
+      if (gespeicherteHistorie) {
+        historieEintraege = JSON.parse(gespeicherteHistorie);
+      }
+    } catch (e) {}
+
+    historieTbody.innerHTML = '';
+
+    if (historieEintraege.length === 0) {
+      historieTbody.innerHTML = `<tr><td colspan="4" style="text-align: center; color: #6b7280; padding: 15px;">Bisher noch keine archivierten Monate vorhanden.</td></tr>`;
+      return;
+    }
+
+    historieEintraege.forEach(eintrag => {
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td style="padding: 10px;"><b>${eintrag.zeitraum}</b></td>
+        <td style="padding: 10px;">${eintrag.gesamt} €</td>
+        <td style="padding: 10px;">${eintrag.abgebucht} €</td>
+        <td style="padding: 10px; color: #16a34a; font-weight: bold;">${eintrag.status}</td>
+      `;
+      historieTbody.appendChild(tr);
+    });
+  }
+
   function renderVertraege() {
     if (!tableBody) return;
 
@@ -381,13 +413,43 @@ function initApp() {
 
   if (btnResetAbgebucht) {
     btnResetAbgebucht.addEventListener('click', () => {
-      if (confirm('Möchtest du alle Haken für den neuen Abrechnungszeitraum (15. bis 15.) zurücksetzen?')) {
+      if (confirm('Möchtest du den aktuellen Monat abschließen, die Daten in der Historie archivieren und alle Haken für den neuen Abrechnungszeitraum (15. bis 15.) zurücksetzen?')) {
+        let gesamtBedarf = 0;
+        let abgebuchtSumme = 0;
+        vertragsDaten.forEach(v => {
+          gesamtBedarf += v.monatlich;
+          if (v.abgebucht) {
+            abgebuchtSumme += v.monatlich;
+          }
+        });
+
+        const heuteFormatiert = new Date().toLocaleDateString('de-DE', { month: 'long', year: 'numeric' });
+        
+        let historieEintraege = [];
+        try {
+          const gespeicherteHistorie = localStorage.getItem(STORAGE_KEY_HISTORIE);
+          if (gespeicherteHistorie) {
+            historieEintraege = JSON.parse(gespeicherteHistorie);
+          }
+        } catch (e) {}
+
+        historieEintraege.unshift({
+          zeitraum: heuteFormatiert,
+          gesamt: gesamtBedarf.toFixed(2),
+          abgebucht: abgebuchtSumme.toFixed(2),
+          status: 'Erfolgreich abgeschlossen'
+        });
+
+        localStorage.setItem(STORAGE_KEY_HISTORIE, JSON.stringify(historieEintraege));
+
         vertragsDaten.forEach(v => {
           v.abgebucht = false;
           v.abgebuchtDatum = null;
         });
+
         speichereInLocalStorage();
         renderVertraege();
+        renderHistorie();
       }
     });
   }
@@ -479,6 +541,7 @@ function initApp() {
 
   initKategorienFilter();
   renderVertraege();
+  renderHistorie();
 }
 
 if (document.readyState === 'loading') {

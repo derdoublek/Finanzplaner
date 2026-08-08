@@ -128,7 +128,6 @@
               <option value="Versicherung">Versicherung</option>
               <option value="Gläubiger">Gläubiger</option>
             </select>
-            <!-- Neu eingefügtes Rhythmus-Filter-Dropdown im gewohnten Design -->
             <select id="filterRhythmus">
               <option value="">Alle Rhythmen</option>
               <option value="1">Monatlich</option>
@@ -163,6 +162,35 @@
             <tbody></tbody>
           </table>
 
+        </div>
+      </details>
+    </div>
+  </div>
+
+  <!-- HISTORIE / ARCHIV -->
+  <div class="grid" style="margin-top: 20px;">
+    <div class="card card-full">
+      <details>
+        <summary>
+          <span>📜 Monats-Historie & Archiv</span>
+        </summary>
+        <div class="details-content" style="padding-top: 15px;">
+          <p style="font-size: 14px; color: #6b7280; margin-bottom: 15px;">Hier siehst du die archivierten Daten vergangener Abrechnungszeiträume (15. bis 15.).</p>
+          <div style="overflow-x: auto;">
+            <table id="historieTabelle">
+              <thead>
+                <tr>
+                  <th>Zeitraum / Monat</th>
+                  <th>Gesamtbedarf</th>
+                  <th>Bereits abgebucht</th>
+                  <th>Status / Notiz</th>
+                </tr>
+              </thead>
+              <tbody>
+                <!-- Wird dynamisch gefüllt -->
+              </tbody>
+            </table>
+          </div>
         </div>
       </details>
     </div>
