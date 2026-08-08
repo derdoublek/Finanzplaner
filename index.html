@@ -112,7 +112,7 @@
     <div class="card card-full">
       <details open>
         <summary>
-          <span>🏦 Vertragsverwaltung & Kontoabgleich (Zyklus 15. bis 15.)</span>
+          <span>🏦 Vertragsverwaltung & Kontoabgleich</span>
           <div style="display: flex; gap: 10px;">
             <button type="button" class="btn-add" onclick="document.getElementById('abbuchungModal').showModal(); event.preventDefault();" style="background-color: #0284c7;">
               ⚡ Buchung hinzufügen
@@ -140,7 +140,6 @@
               <option value="12">Jährlich</option>
             </select>
             <button id="btnResetAbgebucht" type="button" class="btn-secondary">🔄 Monat zurücksetzen</button>
-            <span id="monatsHinweis" class="badge-reminder" style="display:none;">⚠️ Der 15. ist da: Zeit für den neuen Abrechnungszeitraum!</span>
           </div>
 
           <!-- SUMMEN OBEN -->
@@ -155,7 +154,6 @@
           <table id="vertragstabelle">
             <thead>
               <tr>
-                <th style="width: 40px; text-align: center;">Status</th>
                 <th>Kategorie</th>
                 <th>Vertrag</th>
                 <th>Betrag (Rhythmus)</th>
@@ -179,7 +177,7 @@
           <span>📜 Monats-Historie & Archiv</span>
         </summary>
         <div class="details-content" style="padding-top: 15px;">
-          <p style="font-size: 14px; color: #6b7280; margin-bottom: 15px;">Hier siehst du die archivierten Daten vergangener Abrechnungszeiträume (15. bis 15.).</p>
+          <p style="font-size: 14px; color: #6b7280; margin-bottom: 15px;">Hier siehst du die archivierten Daten vergangener Abrechnungszeiträume.</p>
           <div style="overflow-x: auto;">
             <table id="historieTabelle">
               <thead>

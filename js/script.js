@@ -22,16 +22,6 @@ function initApp() {
   const bereitsAbgebuchtDisplay = document.getElementById('bereitsAbgebuchtDisplay');
   const offenDisplay = document.getElementById('offenDisplay');
   const btnResetAbgebucht = document.getElementById('btnResetAbgebucht');
-  const monatsHinweis = document.getElementById('monatsHinweis');
-
-  const aktuellerTag = new Date().getDate();
-  if (monatsHinweis) {
-    if (aktuellerTag >= 15 && aktuellerTag <= 20) {
-      monatsHinweis.style.display = 'inline-block';
-    } else {
-      monatsHinweis.style.display = 'none';
-    }
-  }
 
   const fixAutoWert = 350;
   const fixVersicherungenStarr = 250;
@@ -53,11 +43,30 @@ function initApp() {
     datumInput.value = localStorage.getItem(STORAGE_KEY_DATUM);
   }
 
-  const tableBody = document.querySelector('#vertragstabelle tbody');
+  const tabelleEl = document.getElementById('vertragstabelle');
+  const tableBody = tabelleEl ? tabelleEl.querySelector('tbody') : null;
   const gesamtVertraegeEl = document.getElementById('gesamtVertraege');
   const sucheInput = document.getElementById('sucheVertrag');
   const filterKategorie = document.getElementById('filterKategorie');
   const filterRhythmus = document.getElementById('filterRhythmus');
+
+  // Automatische Absicherung des Tabellenkopfes direkt im Code, damit HTML unangetastet bleibt
+  if (tabelleEl) {
+    let thead = tabelleEl.querySelector('thead');
+    if (!thead) {
+      thead = document.createElement('thead');
+      tabelleEl.insertBefore(thead, tableBody);
+    }
+    thead.innerHTML = `
+      <tr>
+        <th>Kategorie</th>
+        <th>Vertrag</th>
+        <th>Betrag (Rhythmus)</th>
+        <th>Umrechnung (Monat)</th>
+        <th style="width: 110px; text-align: right;">Aktion</th>
+      </tr>
+    `;
+  }
 
   let basisVertraege = (typeof vertraege !== 'undefined') ? vertraege : [];
   let vertragsDaten = [];
@@ -119,26 +128,6 @@ function initApp() {
 
   function speichereInLocalStorage() {
     localStorage.setItem(STORAGE_KEY_VERTRAEGE, JSON.stringify(vertragsDaten));
-  }
-
-  function getMaxRaten(rhythmus) {
-    if (rhythmus === 3) return 4;
-    if (rhythmus === 6) return 2;
-    if (rhythmus === 12) return 1;
-    return 1;
-  }
-
-  function getRhythmusText(v) {
-    const r = v.rhythmus || 1;
-    if (r === 1) return 'Monatlich';
-    
-    const maxRaten = getMaxRaten(r);
-    const rate = v.aktuelleRate || 1;
-    
-    if (r === 3) return `Vierteljährlich (${rate}/${maxRaten})`;
-    if (r === 6) return `Halbjährlich (${rate}/${maxRaten})`;
-    if (r === 12) return `Jährlich (${rate}/${maxRaten})`;
-    return 'Monatlich';
   }
 
   function berechneFinanzen() {
@@ -231,7 +220,6 @@ function initApp() {
     const selectEl = document.getElementById('schnellAbbuchungSelect');
     if (!selectEl) return;
 
-    // Nur Verträge anzeigen, die in diesem Monat noch nicht abgebucht sind
     const offeneVertraege = vertragsDaten.filter(v => !v.abgebucht);
     const sortierteVertraege = [...offeneVertraege].sort((a, b) => a.name.localeCompare(b.name, 'de'));
 
@@ -250,51 +238,8 @@ function initApp() {
       const anzeigeEingabeBetrag = v.eingabeBetrag !== undefined ? v.eingabeBetrag : (v.monatlich * (v.rhythmus || 1));
       const option = document.createElement('option');
       option.value = realIndex;
-      option.textContent = `${v.name} (${anzeigeEingabeBetrag.toLocaleString('de-DE', {minimumFractionDigits: 2, maximumFractionDigits: 2})} € - ${getRhythmusText(v)})`;
+      option.textContent = `${v.name} (${anzeigeEingabeBetrag.toLocaleString('de-DE', {minimumFractionDigits: 2, maximumFractionDigits: 2})} € - ${rhythmuskanon(v.rhythmus)})`;
       selectEl.appendChild(option);
-    });
-  }
-
-  const schnellDatumInput = document.getElementById('schnellDatumInput');
-  if (schnellDatumInput) {
-    schnellDatumInput.value = new Date().toISOString().split('T')[0];
-  }
-
-  const btnSchnellSpeichern = document.getElementById('btnSchnellAbbuchungSpeichern');
-  if (btnSchnellSpeichern) {
-    btnSchnellSpeichern.addEventListener('click', () => {
-      const selectEl = document.getElementById('schnellAbbuchungSelect');
-      const datumInput = document.getElementById('schnellDatumInput');
-      if (!selectEl || selectEl.value === "") return;
-
-      const index = parseInt(selectEl.value);
-      const gewaehltesDatum = datumInput.value;
-
-      if (!isNaN(index) && gewaehltesDatum) {
-        const dateParts = gewaehltesDatum.split('-');
-        let formatiertesDatum = gewaehltesDatum;
-        if (dateParts.length === 3) {
-          formatiertesDatum = `${dateParts[2]}.${dateParts[1]}.${dateParts[0]}`;
-        }
-
-        vertragsDaten[index].abgebucht = true;
-        vertragsDaten[index].abgebuchtDatum = formatiertesDatum;
-
-        // Raten-Zähler erhöhen bei Nicht-Monatszahlern
-        const r = vertragsDaten[index].rhythmus || 1;
-        if (r > 1) {
-          const maxR = getMaxRaten(r);
-          if (vertragsDaten[index].aktuelleRate < maxR) {
-            vertragsDaten[index].aktuelleRate += 1;
-          }
-        }
-
-        speichereInLocalStorage();
-        renderVertraege();
-
-        const abbuchungModal = document.getElementById('abbuchungModal');
-        if (abbuchungModal) abbuchungModal.close();
-      }
     });
   }
 
@@ -372,7 +317,6 @@ function initApp() {
 
       if (currentEditIndex === globalIndex) {
         tr.innerHTML = `
-          <td></td>
           <td style="padding: 6px;"><input type="text" id="editKat" value="${v.kategorie}" style="width: 100%; padding: 4px;"></td>
           <td style="padding: 6px;"><input type="text" id="editName" value="${v.name}" style="width: 100%; padding: 4px;"></td>
           <td style="padding: 6px;">
@@ -392,18 +336,19 @@ function initApp() {
         `;
       } else {
         const datumAnzeige = v.abgebuchtDatum ? `<br><small style="color: #6b7280; font-weight: normal;">Abgebucht am: ${v.abgebuchtDatum}</small>` : '';
-        const rhythmusLabel = getRhythmusText(v);
         const anzeigeEingabeBetrag = v.eingabeBetrag !== undefined ? v.eingabeBetrag : (v.monatlich * (v.rhythmus || 1));
         const originalBetragStr = anzeigeEingabeBetrag.toLocaleString('de-DE', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+        const monatlichStr = v.monatlich.toLocaleString('de-DE', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+        const rhythmusDetailText = rhythmuskanon(v.rhythmus);
 
         tr.innerHTML = `
-          <td style="text-align: center; padding: 10px;">
-            <input type="checkbox" class="check-abgebucht" ${v.abgebucht ? 'checked' : ''} onchange="toggleAbgebucht(${globalIndex}, this)">
-          </td>
           <td style="padding: 10px;"><b>${v.kategorie}</b></td>
           <td style="padding: 10px;">${v.name}${datumAnzeige}</td>
-          <td style="padding: 10px;">${originalBetragStr} €</td>
-          <td style="padding: 10px; font-weight: bold;">${v.monatlich.toLocaleString('de-DE', {minimumFractionDigits: 2, maximumFractionDigits: 2})} € <br><small style="color: #6b7280;">(${rhythmusLabel})</small></td>
+          <td style="padding: 10px;"><b>${originalBetragStr} €</b></td>
+          <td style="padding: 10px;">
+            ${monatlichStr} €<br>
+            <small style="color: #6b7280;">(${rhythmusDetailText})</small>
+          </td>
           <td style="padding: 10px; text-align: right; white-space: nowrap;">
             <button onclick="loescheVertrag(${globalIndex})" style="background:none; border:none; cursor:pointer; color:#dc3545; margin-right: 6px;" title="Löschen">🗑️</button>
             <button onclick="starteBearbeitung(${globalIndex})" style="background:none; border:none; cursor:pointer;" title="Bearbeiten">✏️</button>
@@ -427,102 +372,16 @@ function initApp() {
     initSchnellAbbuchungDropdown();
   }
 
-  window.toggleAbgebucht = function(index, checkboxEl) {
-    const istAbgebucht = checkboxEl.checked;
-    
-    if (istAbgebucht) {
-      const heuteISO = new Date().toISOString().split('T')[0];
-      
-      let dialogEl = document.getElementById('kalenderModal');
-      if (!dialogEl) {
-        dialogEl = document.createElement('dialog');
-        dialogEl.id = 'kalenderModal';
-        dialogEl.className = 'modal';
-        dialogEl.innerHTML = `
-          <div class="modal-content">
-            <div class="modal-header">
-              <h3>Abbuchungsdatum wählen</h3>
-              <button type="button" class="btn-close" id="SchliesseKalender">✕</button>
-            </div>
-            <p style="font-size: 14px; color: #4b5563; margin-bottom: 12px;">Wähle den Tag aus, an dem die Buchung stattgefunden hat:</p>
-            <input type="date" id="popupDatumInput" value="${heuteISO}" style="margin-bottom: 16px;">
-            <div style="display: flex; justify-content: flex-end; gap: 10px;">
-              <button type="button" id="abruestenAbbrechen" class="btn-secondary" style="margin-bottom:0;">Abbrechen</button>
-              <button type="button" id="abruestenBestätigen" class="btn-add">Datum übernehmen</button>
-            </div>
-          </div>
-        `;
-        document.body.appendChild(dialogEl);
-      }
-
-      const popupDatumInput = document.getElementById('popupDatumInput');
-      popupDatumInput.value = heuteISO;
-      dialogEl.showModal();
-
-      const btnBestätigen = document.getElementById('abruestenBestätigen');
-      const btnAbbrechen = document.getElementById('abruestenAbbrechen');
-      const btnClose = document.getElementById('SchliesseKalender');
-
-      const neuerBestätigen = btnBestätigen.cloneNode(true);
-      btnBestätigen.parentNode.replaceChild(neuerBestätigen, btnBestätigen);
-
-      const neuerAbbrechen = btnAbbrechen.cloneNode(true);
-      btnAbbrechen.parentNode.replaceChild(neuerAbbrechen, btnAbbrechen);
-
-      const neuesClose = btnClose.cloneNode(true);
-      btnClose.parentNode.replaceChild(neuesClose, btnClose);
-
-      document.getElementById('abruestenBestätigen').addEventListener('click', () => {
-        const gewaehltesDatum = popupDatumInput.value;
-        dialogEl.close();
-
-        if (gewaehltesDatum) {
-          const dateParts = gewaehltesDatum.split('-');
-          let formatiertesDatum = gewaehltesDatum;
-          if (dateParts.length === 3) {
-            formatiertesDatum = `${dateParts[2]}.${dateParts[1]}.${dateParts[0]}`;
-          }
-          vertragsDaten[index].abgebucht = true;
-          vertragsDaten[index].abgebuchtDatum = formatiertesDatum;
-
-          const r = vertragsDaten[index].rhythmus || 1;
-          if (r > 1) {
-            const maxR = getMaxRaten(r);
-            if (vertragsDaten[index].aktuelleRate < maxR) {
-              vertragsDaten[index].aktuelleRate += 1;
-            }
-          }
-        } else {
-          checkboxEl.checked = false;
-        }
-        speichereInLocalStorage();
-        renderVertraege();
-      });
-
-      const schliessenHandler = () => {
-        dialogEl.close();
-        checkboxEl.checked = false;
-      };
-
-      document.getElementById('abruestenAbbrechen').addEventListener('click', schliessenHandler);
-      document.getElementById('SchliesseKalender').addEventListener('click', schliessenHandler);
-
-    } else {
-      vertragsDaten[index].abgebucht = false;
-      vertragsDaten[index].abgebuchtDatum = null;
-      // Rate wieder einen Schritt zurücknehmen, wenn man den Haken entfernt
-      const r = vertragsDaten[index].rhythmus || 1;
-      if (r > 1 && vertragsDaten[index].aktuelleRate > 1) {
-        vertragsDaten[index].aktuelleRate -= 1;
-      }
-      speichereInLocalStorage();
-      renderVertraege();
-    }
-  };
+  function rhythmuskanon(r) {
+    if (r === 3) return 'Vierteljährlich';
+    if (r === 6) return 'Halbjährlich';
+    if (r === 12) return 'Jährlich';
+    return 'Monatlich';
+  }
 
   if (btnResetAbgebucht) {
     btnResetAbgebucht.addEventListener('click', () => {
-      if (confirm('Möchtest du den aktuellen Monat abschließen, die Daten in der Historie archivieren und alle Haken für den neuen Abrechnungszeitraum (15. bis 15.) zurücksetzen?')) {
+      if (confirm('Möchtest du den aktuellen Monat abschließen, die Daten in der Historie archivieren und alle Haken zurücksetzen?')) {
         let gesamtBedarf = 0;
         let abgebuchtSumme = 0;
         vertragsDaten.forEach(v => {
@@ -554,7 +413,6 @@ function initApp() {
         vertragsDaten.forEach(v => {
           v.abgebucht = false;
           v.abgebuchtDatum = null;
-          // Hinweis: Die aktuelleRate läuft über das Jahr weiter, bis alle Raten durch sind oder das Jahr um ist.
         });
 
         speichereInLocalStorage();
