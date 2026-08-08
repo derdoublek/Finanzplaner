@@ -1,8 +1,8 @@
 const vertraege = [
-    { kategorie: "Kredite", name: "DSL Bank", jaehrlich: 8640, monatlich: 720.00 },
+    { kategorie: "Gläubiger", name: "DSL Bank", jaehrlich: 8640, monatlich: 720.00 },
     { kategorie: "Auto", name: "VW Touran", jaehrlich: 4200, monatlich: 350.00 },
     { kategorie: "Gläubiger", name: "Kindergarten", jaehrlich: 1800, monatlich: 150.00 },
-    { kategorie: "Kredite", name: "LBS Süd", jaehrlich: 1800, monatlich: 150.00 },
+    { kategorie: "Gläubiger", name: "LBS Süd", jaehrlich: 1800, monatlich: 150.00 },
     { kategorie: "Gläubiger", name: "Gas", jaehrlich: 2400, monatlich: 200.00 },
     { kategorie: "Gläubiger", name: "Strom", jaehrlich: 1116, monatlich: 93.00 },
     { kategorie: "Gläubiger", name: "1&1", jaehrlich: 780, monatlich: 65.00 },
