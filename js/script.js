@@ -10,6 +10,7 @@ function initApp() {
   const restDisplay = document.getElementById('rest');
   const ueberschussDisplay = document.getElementById('ueberschuss');
   const pufferStatusDisplay = document.getElementById('pufferStatus');
+  const nochOffenBedarfDisplay = document.getElementById('nochOffenBedarf');
 
   const fixAutoDisplay = document.getElementById('fixAuto');
   const bedarfVersicherungenDisplay = document.getElementById('bedarfVersicherungen');
@@ -17,14 +18,34 @@ function initApp() {
   const bedarfGlaeubigerDisplay = document.getElementById('bedarfGlaeubiger');
   const gesamtFixkostenDisplay = document.getElementById('gesamtFixkosten');
 
+  const bereitsAbgebuchtDisplay = document.getElementById('bereitsAbgebuchtDisplay');
+  const offenDisplay = document.getElementById('offenDisplay');
+  const btnResetAbgebucht = document.getElementById('btnResetAbgebucht');
+  const monatsHinweis = document.getElementById('monatsHinweis');
+
+  // Prüfen, ob heute zwischen dem 15. und 20. des Monats ist -> Hinweis einblenden
+  const aktuellerTag = new Date().getDate();
+  if (monatsHinweis) {
+    if (aktuellerTag >= 15 && aktuellerTag <= 20) {
+      monatsHinweis.style.display = 'inline-block';
+    } else {
+      monatsHinweis.style.display = 'none';
+    }
+  }
+
   const fixAutoWert = 350;
   const fixVersicherungenStarr = 250;
-  const fixGlaeubigerStarr = 1900; // Fester Betrag laut Einkommensverteiler
-  const zielpuffer = 750;
+  const fixGlaeubigerStarr = 1900; 
 
-  if (nettoInput && localStorage.getItem(STORAGE_KEY_NETTO) !== null) {
-    nettoInput.value = localStorage.getItem(STORAGE_KEY_NETTO);
+  if (nettoInput) {
+    const gespeicherterNettoWert = localStorage.getItem(STORAGE_KEY_NETTO);
+    if (gespeicherterNettoWert !== null && gespeicherterNettoWert !== '') {
+      nettoInput.value = gespeicherterNettoWert;
+    } else {
+      nettoInput.value = '3500';
+    }
   }
+
   if (kontostandInput && localStorage.getItem(STORAGE_KEY_KONTOSTAND) !== null) {
     kontostandInput.value = localStorage.getItem(STORAGE_KEY_KONTOSTAND);
   }
@@ -42,6 +63,9 @@ function initApp() {
   if (gespeicherteVertraege) {
     try {
       vertragsDaten = JSON.parse(gespeicherteVertraege);
+      vertragsDaten.forEach(v => {
+        if (v.abgebucht === undefined) v.abgebucht = false;
+      });
     } catch (e) {
       vertragsDaten = (typeof vertraege !== 'undefined') ? vertraege : [];
     }
@@ -58,23 +82,24 @@ function initApp() {
   function berechneFinanzen() {
     let versicherungBedarfSumme = 0;
     let glaeubigerKontoSumme = 0;
+    let nochOffenGläubigerBedarf = 0;
 
-    // Exakte Trennung nach Kategorien
     vertragsDaten.forEach(v => {
       const kat = (v.kategorie || '').toLowerCase();
       if (kat.includes('versicherung')) {
         versicherungBedarfSumme += v.monatlich;
       } else if (kat.includes('gläubiger') || kat.includes('glaeubiger')) {
         glaeubigerKontoSumme += v.monatlich;
+        if (!v.abgebucht) {
+          nochOffenGläubigerBedarf += v.monatlich;
+        }
       }
     });
 
-    // 1. Tatsächlicher Bedarf bei Versicherungen anzeigen
     if (bedarfVersicherungenDisplay) {
       bedarfVersicherungenDisplay.textContent = versicherungBedarfSumme.toLocaleString('de-DE', {minimumFractionDigits: 2, maximumFractionDigits: 2}) + ' €';
     }
 
-    // 2. Gläubigerkonto: Anzeigewert starr auf 1.900 €, tatsächlicher Bedarf darunter
     if (fixGlaeubigerDisplay) {
       fixGlaeubigerDisplay.textContent = fixGlaeubigerStarr.toLocaleString('de-DE') + ' €';
     }
@@ -86,36 +111,44 @@ function initApp() {
       fixAutoDisplay.textContent = fixAutoWert.toLocaleString('de-DE') + ' €';
     }
 
-    // 3. Gesamte Fixkosten (Auto [350 €] + Versicherungen [250 €] + Gläubigerkonto [1.900 €] = 2.500 €)
     const fixkostenGesamt = fixAutoWert + fixVersicherungenStarr + fixGlaeubigerStarr;
 
     if (gesamtFixkostenDisplay) {
       gesamtFixkostenDisplay.textContent = 'Gesamt: ' + fixkostenGesamt.toLocaleString('de-DE', {minimumFractionDigits: 2, maximumFractionDigits: 2}) + ' €';
     }
 
-    // 4. Verfügbares Netto berechnen
     if (nettoInput && restDisplay) {
       const netto = parseFloat(nettoInput.value) || 0;
       const verfuegbar = netto - fixkostenGesamt;
       restDisplay.textContent = verfuegbar.toLocaleString('de-DE', {minimumFractionDigits: 2, maximumFractionDigits: 2}) + ' €';
+      
+      if (verfuegbar < 0) {
+        restDisplay.className = 'total red';
+      } else {
+        restDisplay.className = 'total';
+      }
+
       localStorage.setItem(STORAGE_KEY_NETTO, nettoInput.value);
     }
 
-    // 5. Gläubigerkonto Puffer / Entnahme berechnen
     if (kontostandInput && ueberschussDisplay && pufferStatusDisplay) {
       const kontostand = parseFloat(kontostandInput.value) || 0;
-      const ueberschuss = kontostand - zielpuffer;
+      const differenz = kontostand - nochOffenGläubigerBedarf;
       localStorage.setItem(STORAGE_KEY_KONTOSTAND, kontostandInput.value);
 
-      if (ueberschuss >= 0) {
-        ueberschussDisplay.textContent = ueberschuss.toLocaleString('de-DE', {minimumFractionDigits: 2, maximumFractionDigits: 2}) + ' €';
-        pufferStatusDisplay.className = 'green';
-        pufferStatusDisplay.textContent = '🟢 Du kannst ' + ueberschuss.toLocaleString('de-DE', {minimumFractionDigits: 2, maximumFractionDigits: 2}) + ' € entnehmen.';
+      if (nochOffenBedarfDisplay) {
+        nochOffenBedarfDisplay.textContent = nochOffenGläubigerBedarf.toLocaleString('de-DE', {minimumFractionDigits: 2, maximumFractionDigits: 2}) + ' €';
+      }
+
+      if (differenz >= 0) {
+        ueberschussDisplay.textContent = '+' + differenz.toLocaleString('de-DE', {minimumFractionDigits: 2, maximumFractionDigits: 2}) + ' €';
+        pufferStatusDisplay.className = 'status-box-green';
+        pufferStatusDisplay.textContent = '🟢 Kontostand deckt alle restlichen Abzüge.';
       } else {
-        const fehlbetrag = Math.abs(ueberschuss);
+        const fehlbetrag = Math.abs(differenz);
         ueberschussDisplay.textContent = '-' + fehlbetrag.toLocaleString('de-DE', {minimumFractionDigits: 2, maximumFractionDigits: 2}) + ' €';
-        pufferStatusDisplay.className = 'red';
-        pufferStatusDisplay.textContent = '🔴 Es fehlen ' + fehlbetrag.toLocaleString('de-DE', {minimumFractionDigits: 2, maximumFractionDigits: 2}) + ' € zum Zielpuffer.';
+        pufferStatusDisplay.className = 'status-box-red';
+        pufferStatusDisplay.textContent = '🔴 Es fehlen ' + fehlbetrag.toLocaleString('de-DE', {minimumFractionDigits: 2, maximumFractionDigits: 2}) + ' € für offene Verträge.';
       }
     }
   }
@@ -135,7 +168,6 @@ function initApp() {
   function renderVertraege() {
     if (!tableBody) return;
 
-    // Höchster monatlicher Betrag oben
     vertragsDaten.sort((a, b) => b.monatlich - a.monatlich);
 
     const suche = sucheInput ? sucheInput.value.toLowerCase() : '';
@@ -149,15 +181,27 @@ function initApp() {
 
     tableBody.innerHTML = '';
     let gesamtMonatlich = 0;
+    let bereitsAbgebuchtSumme = 0;
+    let offenSumme = 0;
 
     gefiltert.forEach((v) => {
       const globalIndex = vertragsDaten.indexOf(v);
       gesamtMonatlich += v.monatlich;
 
+      if (v.abgebucht) {
+        bereitsAbgebuchtSumme += v.monatlich;
+      } else {
+        offenSumme += v.monatlich;
+      }
+
       const tr = document.createElement('tr');
+      if (v.abgebucht && currentEditIndex !== globalIndex) {
+        tr.classList.add('abgebucht-row');
+      }
 
       if (currentEditIndex === globalIndex) {
         tr.innerHTML = `
+          <td></td>
           <td style="padding: 6px;"><input type="text" id="editKat" value="${v.kategorie}" style="width: 100%; padding: 4px;"></td>
           <td style="padding: 6px;"><input type="text" id="editName" value="${v.name}" style="width: 100%; padding: 4px;"></td>
           <td style="padding: 6px;" colspan="2">Monatlich: <input type="number" step="0.01" id="editMonatlich" value="${v.monatlich}" style="width: 80px; padding: 4px;"> €</td>
@@ -168,6 +212,9 @@ function initApp() {
         `;
       } else {
         tr.innerHTML = `
+          <td style="text-align: center; padding: 10px;">
+            <input type="checkbox" class="check-abgebucht" ${v.abgebucht ? 'checked' : ''} onchange="toggleAbgebucht(${globalIndex})">
+          </td>
           <td style="padding: 10px;"><b>${v.kategorie}</b></td>
           <td style="padding: 10px;">${v.name}</td>
           <td style="padding: 10px;">${v.jaehrlich.toLocaleString('de-DE', {minimumFractionDigits: 2, maximumFractionDigits: 2})} €</td>
@@ -184,8 +231,30 @@ function initApp() {
     if (gesamtVertraegeEl) {
       gesamtVertraegeEl.textContent = gesamtMonatlich.toLocaleString('de-DE', {minimumFractionDigits: 2, maximumFractionDigits: 2}) + ' €';
     }
+    if (bereitsAbgebuchtDisplay) {
+      bereitsAbgebuchtDisplay.textContent = bereitsAbgebuchtSumme.toLocaleString('de-DE', {minimumFractionDigits: 2, maximumFractionDigits: 2}) + ' €';
+    }
+    if (offenDisplay) {
+      offenDisplay.textContent = offenSumme.toLocaleString('de-DE', {minimumFractionDigits: 2, maximumFractionDigits: 2}) + ' €';
+    }
 
     berechneFinanzen();
+  }
+
+  window.toggleAbgebucht = function(index) {
+    vertragsDaten[index].abgebucht = !vertragsDaten[index].abgebucht;
+    speichereInLocalStorage();
+    renderVertraege();
+  };
+
+  if (btnResetAbgebucht) {
+    btnResetAbgebucht.addEventListener('click', () => {
+      if (confirm('Möchtest du alle Haken für den neuen Abrechnungszeitraum (15. bis 15.) zurücksetzen?')) {
+        vertragsDaten.forEach(v => v.abgebucht = false);
+        speichereInLocalStorage();
+        renderVertraege();
+      }
+    });
   }
 
   if (nettoInput) nettoInput.addEventListener('input', berechneFinanzen);
@@ -229,11 +298,18 @@ function initApp() {
 
   const btnSpeichern = document.getElementById('vertragSpeichern');
   if (btnSpeichern) {
-    btnSpeichern.addEventListener('click', function() {
-      const name = document.getElementById('vertragName').value.trim();
-      const betrag = parseFloat(document.getElementById('vertragBetrag').value) || 0;
-      const rhythmus = parseInt(document.getElementById('vertragRhythmus').value) || 1;
-      const kategorie = document.getElementById('vertragKategorie').value;
+    btnSpeichern.addEventListener('click', function(e) {
+      e.preventDefault();
+
+      const nameInput = document.getElementById('vertragName');
+      const betragInput = document.getElementById('vertragBetrag');
+      const rhythmusSelect = document.getElementById('vertragRhythmus');
+      const kategorieSelect = document.getElementById('vertragKategorie');
+
+      const name = nameInput.value.trim();
+      const betrag = parseFloat(betragInput.value) || 0;
+      const rhythmus = parseInt(rhythmusSelect.value) || 1;
+      const kategorie = kategorieSelect.value;
 
       if (!name || betrag <= 0) {
         alert('Bitte gib einen gültigen Namen und Betrag ein.');
@@ -243,14 +319,17 @@ function initApp() {
       const monatlich = (betrag * (12 / rhythmus)) / 12;
       const jaehrlich = monatlich * 12;
 
-      vertragsDaten.push({ kategorie, name, jaehrlich, monatlich });
+      vertragsDaten.push({ kategorie, name, jaehrlich, monatlich, abgebucht: false });
 
-      document.getElementById('vertragName').value = '';
-      document.getElementById('vertragBetrag').value = '';
+      nameInput.value = '';
+      betragInput.value = '';
 
       speichereInLocalStorage();
       initKategorienFilter();
       renderVertraege();
+
+      const addModal = document.getElementById('addModal');
+      if (addModal) addModal.close();
     });
   }
 
