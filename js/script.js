@@ -467,6 +467,41 @@ function initApp() {
     renderVertraege();
   };
 
+  // "Buchung hinzufügen" (Modal): markiert den gewählten Vertrag als abgebucht
+  const btnSchnellAbbuchung = document.getElementById('btnSchnellAbbuchungSpeichern');
+  if (btnSchnellAbbuchung) {
+    btnSchnellAbbuchung.addEventListener('click', function(e) {
+      e.preventDefault();
+
+      const selectEl = document.getElementById('schnellAbbuchungSelect');
+      const datumEl = document.getElementById('schnellDatumInput');
+      const index = parseInt(selectEl ? selectEl.value : '', 10);
+
+      // Kein Vertrag ausgewählt (z. B. alle schon abgehakt)
+      if (isNaN(index) || !vertragsDaten[index]) {
+        return;
+      }
+
+      // Datum aus dem Input (yyyy-mm-dd) in Anzeigeformat umwandeln, sonst heute
+      let datumAnzeige;
+      if (datumEl && datumEl.value) {
+        const [j, m, t] = datumEl.value.split('-');
+        datumAnzeige = `${t}.${m}.${j}`;
+      } else {
+        datumAnzeige = new Date().toLocaleDateString('de-DE');
+      }
+
+      vertragsDaten[index].abgebucht = true;
+      vertragsDaten[index].abgebuchtDatum = datumAnzeige;
+
+      speichereInLocalStorage();
+      renderVertraege();
+
+      const modal = document.getElementById('abbuchungModal');
+      if (modal && modal.open) modal.close();
+    });
+  }
+
   const btnSpeichern = document.getElementById('vertragSpeichern');
   if (btnSpeichern) {
     btnSpeichern.addEventListener('click', function(e) {
